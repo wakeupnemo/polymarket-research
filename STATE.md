@@ -2,29 +2,26 @@
 
 ## Highlighted Updates
 
-This document has been updated to reflect the now-implemented diagnostics layer on top of the stable feature-set pipeline, the successful live diagnostics run on real project data, and the current repo-sync reality on the Debian server.
+This document has been updated to reflect the now-implemented diagnostics interpretation layer (market gating + tradability + active universe) on top of the stable feature pipeline, and the updated near-term priority toward conservative maker-markout scaffolding.
 
 ### New since the previous version
-- The dedicated diagnostics layer on top of `feature_set_v0_1` is now implemented and present in the repo.
+- The dedicated diagnostics interpretation layer is now implemented under reporting as `build_tradability_report.py`.
 - The current implemented chain is now:
-  - metadata -> tokens -> raw books -> flat state -> frozen feature inputs -> feature set `v0_1` -> feature diagnostics
-- The diagnostics layer is now callable from the CLI and from a shell runner.
-- The diagnostics layer now writes:
-  - diagnostics JSON summary,
-  - market-summary CSV,
-  - latest diagnostics manifest.
-- The diagnostics layer has been run successfully on the current real feature artifact.
-- The latest successful diagnostics run covered `60` feature rows and produced concrete aggregate diagnostics.
-- The diagnostics test passes.
-- The focused feature + diagnostics test slice passes.
-- The broader feature/smoke test slice passes.
-- GitHub `main` already contained the diagnostics files; the Debian server matched those targeted files locally, so no additional diagnostics implementation delta was required on the server.
+  - metadata -> tokens -> raw books -> flat state -> frozen feature inputs -> feature set `v0_1` -> feature diagnostics -> market gating/tradability -> active universe
+- The new tradability layer is callable from the CLI (`build-tradability-report`) and from a shell runner.
+- The tradability layer now writes:
+  - tradability JSON report,
+  - tradability market-summary CSV with gating columns,
+  - active-universe CSV (keep-only markets),
+  - latest tradability manifest.
+- Gating thresholds are now explicit and centralized for conservative keep/watch/exclude decisions.
+- The focused tradability test passes (plus diagnostics test slice).
 
 ### Outdated assumptions removed
-- The next immediate task is no longer “implement the diagnostics layer”; that layer already exists and runs successfully.
-- The current repo does not need more ingestion scaffolding, more feature-builder scaffolding, or a new smoke experiment for this step.
-- The current next step should not be framed as diagnostics code design; it is now diagnostics interpretation, repo hygiene, and deciding the next research delta.
-- The diagnostics layer should not be treated as a final research decision engine; it is still a first-pass reporting and triage layer.
+- The next immediate task is no longer “implement diagnostics interpretation/gating”; that layer now exists.
+- The current repo still does not need more ingestion scaffolding, more feature-builder scaffolding, or a new smoke experiment for this step.
+- The next step should not be framed as adding another diagnostics layer; it is now using the new active universe for tradability narrowing and first conservative maker-markout scaffolding.
+- Gating/tradability outputs are still first-pass triage artifacts, not alpha or production execution rules.
 
 ---
 
@@ -42,7 +39,7 @@ The goal is not to rush into a bot or accumulate loosely related ideas. The goal
 
 ## Current Phase
 
-**Phase 1 — minimum data backbone plus first stable feature layer and first diagnostics layer implemented; first interpretation and research triage beginning**
+**Phase 1 — minimum data backbone plus stable feature set, diagnostics, and first explicit market gating/tradability layer implemented; universe narrowing for first maker-markout beginning**
 
 The project has moved beyond pure data plumbing and beyond the first reproducible feature stage.
 
@@ -53,8 +50,9 @@ Current reality:
 - top-of-book state is being built from raw snapshots,
 - the feature-job input set is frozen explicitly,
 - a first stable feature set `v0_1` has been built successfully from those frozen inputs,
-- a diagnostics layer on top of the stable feature set now exists and runs successfully,
-- and the next concrete task is to interpret diagnostics and decide the next smallest research delta, not to redesign the pipeline.
+- a diagnostics layer on top of the stable feature set exists and runs successfully,
+- a downstream tradability/gating layer now converts diagnostics into keep/watch/exclude plus active-universe outputs,
+- and the next concrete task is conservative maker-markout scaffolding over that keep universe, not pipeline redesign.
 
 This is still an early research-stage system, but it is no longer just a design document set, it is no longer only an ingestion/state project, and it is no longer waiting on its first reporting layer.
 
@@ -214,6 +212,21 @@ Current live implementation result:
 - found `26` repeated-hash rows,
 - and produced mean / median market-quality values without error.
 
+
+#### 7. Tradability / gating layer
+Implemented and working:
+- consumes latest diagnostics manifest + diagnostics outputs + latest stable feature-set manifest,
+- applies centralized conservative thresholds for `keep` / `watch` / `exclude`,
+- computes a simple additive tradability score for first-pass ranking,
+- writes a tradability market-summary CSV with gating columns,
+- writes keep-only `active_universe_<feature_set_id>.csv`,
+- writes tradability JSON report + latest tradability manifest,
+- exposed through CLI `build-tradability-report`,
+- callable via `scripts/run_build_tradability_report.sh`.
+
+Current implementation note:
+- this remains a reporting/triage layer and does not mutate diagnostics or stable feature-set artifacts.
+
 ---
 
 ## Current Project Structure
@@ -230,6 +243,7 @@ The current repo should be understood approximately as:
   - `run_freeze_feature_inputs.sh`
   - `run_build_feature_set_v0_1.sh`
   - `run_build_feature_diagnostics.sh`
+  - `run_build_tradability_report.sh`
   - GitHub / workflow helper scripts
 - `src/pmre/`
   - `config.py`
@@ -247,6 +261,7 @@ The current repo should be understood approximately as:
     - `build_books_features.py`
   - `reporting/`
     - `build_feature_diagnostics.py`
+    - `build_tradability_report.py`
   - `experiments/`
 - `tests/`
   - metadata refresh test
@@ -255,6 +270,7 @@ The current repo should be understood approximately as:
   - feature input freeze test
   - feature set `v0_1` test
   - feature diagnostics test
+  - tradability report test
   - smoke test
 - `data/`
   - `raw/`
@@ -475,27 +491,64 @@ This defines:
 - the diagnostics JSON path,
 - the market-summary CSV path.
 
+### Tradability / universe layer
+
+#### Tradability JSON report
+Stored under:
+- `data/features/polymarket/universe/tradability_report_<feature_set_id>.json`
+
+Contains:
+- centralized threshold config used for this run,
+- scoring formula notes,
+- keep/watch/exclude counts,
+- top keep markets and frequent exclusion reasons,
+- output paths for this tradability run.
+
+#### Tradability market-summary CSV
+Stored under:
+- `data/features/polymarket/universe/tradability_report_<feature_set_id>_market_summary.csv`
+
+Contains market-level diagnostics + gating additions including:
+- `gating_class`,
+- `tradability_score`,
+- `gating_reason`.
+
+#### Active universe CSV
+Stored under:
+- `data/features/polymarket/universe/active_universe_<feature_set_id>.csv`
+
+Contains keep-only markets for the next maker-markout step.
+
+#### Latest tradability manifest
+Stored under:
+- `data/features/polymarket/universe/latest_tradability_manifest.json`
+
+Defines the latest tradability run and pointers to tradability outputs.
+
 ---
 
 ## Immediate Next Tasks
 
 The next concrete tasks should now be:
 
-1. Clean repo hygiene on the Debian server:
-   - remove `__pycache__` / `.pyc` junk before any intentional commit,
-   - inspect which generated artifacts should be versioned,
-   - and rebase local `main` before any push.
+1. Confirm artifact hygiene decisions for diagnostics + tradability outputs:
+   - keep intentional generated artifacts only,
+   - avoid accidental cache/junk files in commits.
 
-2. Interpret the diagnostics outputs rather than redesign the pipeline:
-   - decide whether current stale / repeated-hash behavior should gate markets or tokens,
-   - decide whether the explicit thresholds are useful enough for the next research loop,
-   - and identify whether the next delta belongs in diagnostics thresholds, collection cadence, or first markout-style analysis.
+2. Use the new gating outputs as first-pass universe control:
+   - review keep/watch/exclude distributions and reasons,
+   - calibrate thresholds only if there is clear evidence from repeated runs.
 
-3. Keep the implementation sequence conservative:
+3. Build the first conservative maker-markout scaffold on top of `active_universe_<feature_set_id>.csv`:
+   - market-level first,
+   - simple assumptions first,
+   - no simulator expansion yet.
+
+4. Keep the implementation sequence conservative:
    - no duplicate ingestion work,
    - no duplicate feature-builder scaffolding,
-   - no new smoke experiment for this step,
-   - and no redesign of the stable feature layer unless diagnostics interpretation shows a real need.
+   - no extra diagnostics layer duplication,
+   - no websocket/event enrichment in this immediate step.
 
 ---
 
@@ -523,8 +576,11 @@ At the current stage, the following should be treated as validated.
 - The diagnostics layer exists in the repo and is wired into the CLI.
 - The diagnostics shell runner exists and runs successfully.
 - The diagnostics job successfully consumes the latest stable feature-set manifest and writes all expected outputs.
+- The tradability/gating layer exists in the repo and is wired into the CLI.
+- The tradability shell runner exists.
+- The tradability job consumes diagnostics + feature-set manifests and writes tradability summary + active-universe outputs.
 - The diagnostics test passes.
-- The focused feature + diagnostics test subset passes.
+- The focused tradability + diagnostics test subset passes.
 - The broader feature/smoke test slice passes.
 - GitHub `main` already contains the diagnostics implementation and the local Debian checkout matched the targeted diagnostics files without extra patching.
 - The GitHub repository is now initialized, connected, and pushed successfully.
@@ -540,6 +596,7 @@ At the current stage, the following should be treated as validated.
 - `outcome` to `token_id` mapping is usable in the current backbone.
 - The current state artifact is sufficient to support a first stable diagnostic feature layer.
 - The current stable feature artifact is sufficient to support a first diagnostics reporting layer.
+- Diagnostics outputs are sufficient to drive a first explicit keep/watch/exclude market gating layer and keep-only active universe artifact.
 
 ### Process validation
 The project has a clear operating mode:
@@ -558,9 +615,9 @@ The workflow now also has an explicit source-of-truth rule:
 - ChatGPT Project files are persistent context,
 - and server-side scripts should not depend on those context files existing locally.
 
-The current diagnostics step now also has an explicit implementation rule:
-- only the dedicated diagnostics layer should be added on top of the stable feature set,
-- without re-adding ingestion layers, feature-builder scaffolding, or duplicate smoke logic.
+The current diagnostics+gating step now has an explicit implementation rule:
+- use diagnostics as immutable input and build gating as a downstream reporting layer,
+- without re-adding ingestion layers, feature-builder scaffolding, duplicate diagnostics layers, or duplicate smoke logic.
 
 ---
 
@@ -594,13 +651,12 @@ The following remain important and unvalidated.
 - whether schema drift or payload shape changes will create silent failure modes,
 - whether the initial token subset should be expanded or narrowed for research.
 
-### Diagnostic sufficiency of the first reporting layer
-- whether the current stale / repeated-hash patterns are informative enough to drive market filtering,
-- whether the `wide_spread_threshold` and low-quality thresholds are calibrated well enough,
-- whether diagnostics outputs should remain purely external reports or should begin to drive gating,
-- whether the current `staleness_flag` logic is adequate for triage,
-- whether the simple `market_quality_score` is good enough for first-pass ranking,
-- and whether the next useful delta belongs in diagnostics interpretation, collection cadence, or first markout analysis.
+### Diagnostic + gating sufficiency of the first reporting layer
+- whether the current stale / repeated-hash patterns are informative enough to keep current gating classes stable over time,
+- whether the spread/quality/row-count thresholds are calibrated well enough for conservative universe narrowing,
+- whether current gating reasons are compact and interpretable enough for operational triage,
+- whether the simple tradability score is adequate for first-pass ranking,
+- and whether the next useful delta after this should be threshold calibration or maker-markout iteration.
 
 ---
 
