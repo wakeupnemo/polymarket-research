@@ -7,7 +7,7 @@ Continue iterative development on two parallel feature paths:
 1) metadata -> tokens -> raw books -> books state -> frozen feature inputs -> feature set `v0_1`
 2) metadata -> tokens -> raw books -> books state -> books features
 
-The immediate focus is diagnostics and first research utilities using existing state/feature artifacts.
+The immediate focus is using the new diagnostics outputs to drive first tradability filters and reporting.
 
 ## What was decided in this chat
 
@@ -38,15 +38,9 @@ The immediate focus is diagnostics and first research utilities using existing s
 
 ## Current coding task
 
-Build the first **data-quality diagnostics job** on top of `feature_set_v0_1`.
+Diagnostics layer implementation is complete and integrated into the CLI + runner + test path.
 
-This should use the latest built feature-set artifact and produce a simple diagnostic output for:
-- spread sanity / pathological spread,
-- stale row frequency,
-- one-sided / empty-book behavior,
-- repeated-hash behavior,
-- missing `last_trade_price`,
-- market-quality summaries and ranking.
+Current task is to consume the generated diagnostics artifacts for first-pass market screening and reporting, while keeping the stable feature schema unchanged.
 
 ## Important implementation constraints and assumptions
 
@@ -72,8 +66,8 @@ This should use the latest built feature-set artifact and produce a simple diagn
 
 ## Immediate next steps
 
-1. Add a diagnostics module that can consume either latest feature-set manifest (`v0_1`) or latest books-features manifest.
-2. Produce a diagnostics artifact with row-level counts and market-level summaries.
-3. Add a CLI command and shell runner for the diagnostics job.
-4. Add a small test for the diagnostics job.
-5. After diagnostics, build the first tradability report / narrowed research universe.
+1. Run `build-feature-diagnostics` regularly after each stable feature-set build.
+2. Add a lightweight reporting step that reads diagnostics outputs and ranks/filter markets for tradability review.
+3. Keep thresholds explicit and configurable without changing the stable feature-set schema.
+4. Validate diagnostics behavior on larger live artifacts and document any threshold adjustments.
+5. After diagnostics-driven filtering, build the first narrowed research universe report.
