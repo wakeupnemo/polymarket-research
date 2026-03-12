@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections import defaultdict
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from statistics import median
 from typing import Any
@@ -247,7 +247,7 @@ def build_feature_diagnostics(config_path: str | Path) -> dict[str, Any]:
             )
 
     diagnostics_payload = {
-        "run_ts": datetime.now(UTC).isoformat(),
+        "run_ts": datetime.now(timezone.utc).isoformat(),
         "feature_set_id": feature_set_id,
         "input_feature_manifest": str(latest_feature_manifest),
         "input_feature_csv": str(feature_csv),
@@ -259,7 +259,7 @@ def build_feature_diagnostics(config_path: str | Path) -> dict[str, Any]:
     diagnostics_json.write_text(json.dumps(diagnostics_payload, ensure_ascii=False, indent=2), encoding="utf-8")
 
     manifest = {
-        "run_ts": datetime.now(UTC).isoformat(),
+        "run_ts": datetime.now(timezone.utc).isoformat(),
         "feature_set_id": feature_set_id,
         "input_feature_set_manifest": str(latest_feature_manifest),
         "input_feature_csv": str(feature_csv),
