@@ -4,6 +4,7 @@ import argparse
 import json
 
 from pmre.experiments.maker_markout_smoke import run_smoke
+from pmre.reporting.build_feature_diagnostics import build_feature_diagnostics
 from pmre.features.build_feature_set_v0_1 import build_feature_set_v0_1
 from pmre.features.build_books_features import build_books_features
 from pmre.features.freeze_feature_inputs import freeze_feature_inputs
@@ -37,6 +38,12 @@ def main() -> None:
 
     books_features = subparsers.add_parser("build-books-features", help="Build books-derived features from the latest books-state manifest")
     books_features.add_argument("--config", default="configs/base.yaml", help="Path to YAML config")
+
+    feature_diagnostics = subparsers.add_parser(
+        "build-feature-diagnostics",
+        help="Build diagnostics from the latest stable feature-set manifest",
+    )
+    feature_diagnostics.add_argument("--config", default="configs/base.yaml", help="Path to YAML config")
 
     args = parser.parse_args()
 
@@ -72,6 +79,11 @@ def main() -> None:
 
     if args.command == "build-books-features":
         result = build_books_features(args.config)
+        print(json.dumps(result, indent=2))
+        return
+
+    if args.command == "build-feature-diagnostics":
+        result = build_feature_diagnostics(args.config)
         print(json.dumps(result, indent=2))
         return
 

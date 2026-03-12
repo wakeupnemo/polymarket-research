@@ -2,7 +2,7 @@
 
 ## Highlighted Updates
 
-This document has been updated to reflect the first implemented research feature layer, the first real feature build on project data, and the newly established GitHub-centered workflow.
+This document has been updated to reflect the first implemented research feature layer, the first real feature build on project data, and the newly implemented feature diagnostics layer on top of the stable feature set.
 
 ### New since the previous version
 - A dedicated books-features builder now exists (`build-books-features`) for direct state-to-features output without the freeze-based `v0_1` chain.
@@ -17,6 +17,8 @@ This document has been updated to reflect the first implemented research feature
   - null microprice count,
   - null `last_trade_minus_mid` count.
 - The first stable feature set `v0_1` remains available and unchanged for freeze-based research runs.
+- A dedicated feature diagnostics builder now exists (`build-feature-diagnostics`) and consumes only the latest stable feature-set manifest/artifact.
+- Diagnostics outputs now include aggregate quality counts plus market-level summary statistics and a latest diagnostics manifest.
 - The workflow remains GitHub-centered for code, while ChatGPT Project files are used for persistent context.
 
 ### Outdated assumptions removed
@@ -53,7 +55,7 @@ Current reality:
 - top-of-book state is being built from raw snapshots,
 - the feature-job input set is frozen explicitly,
 - a first stable feature set `v0_1` has been built successfully from those frozen inputs,
-- and the next concrete task is diagnostics on top of `feature_set_v0_1`.
+- and a first diagnostics layer now runs on top of `feature_set_v0_1` outputs.
 
 This is still an early research-stage system, but it is no longer just a design document set and it is no longer only an ingestion/state project.
 
@@ -181,6 +183,7 @@ The current repo should be understood approximately as:
   - `run_freeze_feature_inputs.sh`
   - `run_build_feature_set_v0_1.sh`
   - `run_build_books_features.sh`
+  - `run_build_feature_diagnostics.sh`
   - GitHub / workflow helper scripts
 - `src/pmre/`
   - `config.py`
@@ -198,6 +201,7 @@ The current repo should be understood approximately as:
     - `build_books_features.py`
   - `experiments/`
   - `reporting/`
+    - `build_feature_diagnostics.py`
 - `tests/`
   - metadata refresh test
   - raw books collector test
@@ -205,6 +209,7 @@ The current repo should be understood approximately as:
   - feature input freeze test
   - feature set `v0_1` test
   - books-features builder test
+  - feature-diagnostics builder test
 - `data/`
   - `raw/`
   - `reference/`
