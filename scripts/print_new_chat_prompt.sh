@@ -8,19 +8,28 @@ cd "$ROOT"
 
 BRANCH="$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "unknown")"
 COMMIT="$(git rev-parse --short HEAD 2>/dev/null || echo "no-git")"
+REMOTE="$(git remote get-url origin 2>/dev/null || echo "no-remote")"
 
-cat <<EOF
-Use the GitHub repo as the source of truth.
-Read STATE.md and DEVELOPING_CONTEXT.md from the ChatGPT Project first.
-Then inspect the repo on branch $BRANCH at commit $COMMIT.
-Do not redesign the architecture unless necessary.
+cat <<EOF2
+Use the GitHub repository as the source of truth for code.
+
+Use the ChatGPT Project files as the source of truth for persistent context:
+- STATE.md
+- DEVELOPING_CONTEXT.md
+- PROJECT_BRIEF.md
+- OPERATING_MANUAL.md
+
+Inspect the repo on:
+- branch: $BRANCH
+- commit: $COMMIT
+- remote: $REMOTE
 
 Current task: $TASK
 
-When responding in this chat:
+When responding:
 - prefer copy-paste-ready Debian commands
 - keep changes minimal and modular
-- keep code in the repo, not in Project files
-- update DEVELOPING_CONTEXT.md if the active coding task changes materially
-- update STATE.md only if implemented state, validations, or priorities changed
-EOF
+- keep code in the repo
+- do not assume Project files exist in the server checkout
+- use the ChatGPT Project files for persistent context
+EOF2
