@@ -5,6 +5,7 @@ import json
 
 from pmre.experiments.maker_markout_smoke import run_smoke
 from pmre.features.build_feature_set_v0_1 import build_feature_set_v0_1
+from pmre.features.build_books_features import build_books_features
 from pmre.features.freeze_feature_inputs import freeze_feature_inputs
 from pmre.ingest.metadata_refresh import run_metadata_refresh
 from pmre.ingest.raw_books_collector import run_raw_books_collection
@@ -33,6 +34,9 @@ def main() -> None:
 
     feature_v0_1 = subparsers.add_parser("build-feature-set-v0-1", help="Build the minimum stable feature set v0_1")
     feature_v0_1.add_argument("--config", default="configs/base.yaml", help="Path to YAML config")
+
+    books_features = subparsers.add_parser("build-books-features", help="Build books-derived features from the latest books-state manifest")
+    books_features.add_argument("--config", default="configs/base.yaml", help="Path to YAML config")
 
     args = parser.parse_args()
 
@@ -63,6 +67,11 @@ def main() -> None:
 
     if args.command == "build-feature-set-v0-1":
         result = build_feature_set_v0_1(args.config)
+        print(json.dumps(result, indent=2))
+        return
+
+    if args.command == "build-books-features":
+        result = build_books_features(args.config)
         print(json.dumps(result, indent=2))
         return
 

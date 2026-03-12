@@ -2,12 +2,12 @@
 
 ## Current development focus
 
-Build the first diagnostic research loop on top of the implemented backbone:
+Continue iterative development on two parallel feature paths:
 
-metadata -> tokens -> raw books -> books state -> frozen feature inputs -> feature set `v0_1`
+1) metadata -> tokens -> raw books -> books state -> frozen feature inputs -> feature set `v0_1`
+2) metadata -> tokens -> raw books -> books state -> books features
 
-The immediate focus is no longer ingestion plumbing.  
-The immediate focus is diagnostics and first research utilities using the existing frozen/state/feature artifacts.
+The immediate focus is diagnostics and first research utilities using existing state/feature artifacts.
 
 ## What was decided in this chat
 
@@ -60,8 +60,10 @@ This should use the latest built feature-set artifact and produce a simple diagn
 - Current live collection path is polling, not websocket.
 - Current state layer is top-of-book snapshot state, not reconciled orderbook state.
 - The feature builder is already compatible with the real frozen-input manifest shape.
+- A separate `build-books-features` job now exists and reads the latest books-state manifest directly.
+- The books-features builder now stores sanity diagnostics (`row_count_in/out`, missing IDs/sides, negative spreads, zero-depth, null derived metrics).
 - The current `market_quality_score` is an additive/subtractive first-pass diagnostic score, not a normalized final metric.
-- The current `staleness_flag` includes:
+- The current `staleness_flag` in `v0_1` includes:
   - missing bid or ask,
   - `spread <= 0`,
   - timestamp-age threshold,
@@ -70,7 +72,7 @@ This should use the latest built feature-set artifact and produce a simple diagn
 
 ## Immediate next steps
 
-1. Add a diagnostics module that consumes the latest feature-set manifest.
+1. Add a diagnostics module that can consume either latest feature-set manifest (`v0_1`) or latest books-features manifest.
 2. Produce a diagnostics artifact with row-level counts and market-level summaries.
 3. Add a CLI command and shell runner for the diagnostics job.
 4. Add a small test for the diagnostics job.

@@ -51,3 +51,8 @@ feature_builder:
   quality_score_min_top_depth: 100
   max_repeated_hash_count: 2
   max_missing_last_trade_count: 2
+
+books_feature_builder:
+  latest_state_manifest: data/state/polymarket/latest_books_state_manifest.json
+  output_dir: data/features/polymarket
+  stale_threshold_ms: 15000
