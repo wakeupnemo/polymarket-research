@@ -2,29 +2,32 @@
 
 ## Highlighted Updates
 
-This roadmap has been updated after the first implemented data backbone.
+This roadmap has been updated after the first stable feature pipeline and the first diagnostics layer were successfully implemented and validated.
 
 ### What changed
-- The previous roadmap assumed the project was still in pure pre-implementation mode. That is no longer true.
-- The first three concrete units are now implemented:
-  1. metadata tables,
-  2. raw books collector,
-  3. books state builder.
-- The current working ingestion path is:
-  - `Gamma /markets` for metadata,
-  - `CLOB /books` polling for raw book snapshots.
-- The current live collection path is polling, not websocket.
-- Event-level enrichment is not yet a dependency for the next research step.
-- The roadmap is now centered on:
-  - data-quality validation,
-  - feature computation,
-  - tradability diagnostics,
-  - and first maker-markout experiments.
+- The project is no longer waiting on:
+  - first data-quality diagnostics,
+  - first feature computation,
+  - or first diagnostics/reporting on top of the stable feature set.
+- The implemented pipeline now reaches:
+  - metadata refresh,
+  - raw books collection,
+  - books state build,
+  - feature-input freeze,
+  - stable feature set `v0_1`,
+  - feature diagnostics.
+- The diagnostics layer is now live in the repo, wired into the CLI, covered by a focused test, and successfully run on the current real feature artifact.
+- The current next sequence is now:
+  1. repo hygiene and intentional artifact/versioning decisions,
+  2. diagnostics interpretation and gating decisions,
+  3. tradability / research-universe narrowing,
+  4. first conservative maker-markout scaffold.
 
 ### What was removed or downgraded
-- Immediate websocket engineering as a hard dependency for week 1.
-- Immediate event-table completion as a hard dependency for week 1.
-- Broad “build everything first” sequencing.
+- “Build the first feature layer” as an immediate next task.
+- “Build the first diagnostics layer” as an immediate next task.
+- Any additional ingestion or feature-builder scaffolding for this step.
+- Any duplicate smoke or validation scaffolding for this step.
 
 ---
 
@@ -71,24 +74,28 @@ This roadmap follows five rules:
 
 ## Current Position
 
-The project is now past initial framing and into early execution.
+The project is now past initial backbone construction and into early research-layer validation.
 
 ### Completed backbone blocks
 - repo scaffold and execution entrypoints,
 - metadata refresh,
 - token mapping,
 - raw books collection,
-- flat top-of-book state construction.
+- flat top-of-book state construction,
+- feature-job input freeze,
+- stable feature set `v0_1`,
+- diagnostics reporting layer on top of the stable feature set.
 
 ### Current live limitations
 - no websocket ingestion yet,
 - no incremental orderbook reconstruction yet,
 - no reconciliation engine yet,
 - no first-class event table yet,
-- no feature library yet,
-- no markout experiment yet.
+- no markout experiment yet,
+- no explicit market gating / tradability rules yet,
+- no first decision memo on whether stale / repeated-hash patterns should drive exclusion.
 
-This means the project has enough structure to begin serious diagnostics, but not enough evidence to claim any edge.
+This means the project now has enough structure to begin research triage, but not enough evidence yet to claim any edge.
 
 ---
 
@@ -96,7 +103,7 @@ This means the project has enough structure to begin serious diagnostics, but no
 
 ## Block A — Metadata foundation
 ### Status
-Completed in first usable form.
+**Completed**
 
 ### Deliverables now available
 - raw paginated metadata pages,
@@ -111,7 +118,7 @@ Completed in first usable form.
 
 ## Block B — Raw books collection
 ### Status
-Completed in first usable form.
+**Completed**
 
 ### Deliverables now available
 - append-only raw books JSONL,
@@ -124,7 +131,7 @@ Completed in first usable form.
 
 ## Block C — Books state builder
 ### Status
-Completed in first usable form.
+**Completed**
 
 ### Deliverables now available
 - flat state CSV with best bid / ask, midpoint, spread, last trade price, and level counts,
@@ -134,79 +141,129 @@ Completed in first usable form.
 - Best bid and best ask are computed robustly from unsorted levels.
 - State is snapshot-based, not incrementally reconstructed.
 
+## Block D — Feature input freeze
+### Status
+**Completed**
+
+### Deliverables now available
+- frozen feature-input bundles under `data/features/polymarket/input_freezes/`,
+- latest feature-input freeze manifest,
+- reproducible boundary between upstream state artifacts and downstream feature generation.
+
+### Notes
+- Only approved frozen inputs are allowed into the stable feature job.
+- This is a reproducibility boundary, not a research signal layer.
+
+## Block E — Stable feature layer
+### Status
+**Completed**
+
+### Deliverables now available
+- `feature_set_v0_1_<freeze_id>.csv`,
+- feature-set manifests,
+- stable schema file,
+- CLI / shell entrypoints for feature-set generation.
+
+### Notes
+- This is a first stable diagnostic feature layer, not a final research feature library.
+- Current live feature-set row count is `60` for the latest validated run.
+
+## Block F — Feature diagnostics layer
+### Status
+**Completed**
+
+### Deliverables now available
+- diagnostics JSON summary,
+- market-summary CSV,
+- latest diagnostics manifest,
+- CLI command `build-feature-diagnostics`,
+- shell runner `scripts/run_build_feature_diagnostics.sh`,
+- focused diagnostics test.
+
+### Notes
+- The diagnostics job was run successfully on the current stable feature artifact.
+- The latest validated run reported:
+  - `total_row_count = 60`
+  - `stale_row_count = 26`
+  - `stale_row_fraction = 0.43333333333333335`
+  - `missing_spread_count = 0`
+  - `non_positive_spread_count = 0`
+  - `wide_spread_count = 0`
+  - `zero_or_empty_top_size_count = 0`
+  - `null_imbalance_count = 0`
+  - `null_microprice_count = 0`
+  - `repeated_hash_row_count = 26`
+- The implementation already existed on GitHub `main`; the Debian server matched the targeted files and required no additional diagnostics code patch.
+
 ---
 
 ## Next Execution Sequence
 
-## Step 1 — Data-quality diagnostics
+## Step 1 — Repo hygiene and sync discipline
+### Status
+**In progress**
+
 ### Objective
-Prove that the current state layer is usable enough for the first experiments.
+Keep the working tree intentional before further research steps.
 
 ### Concrete Tasks
-- check for empty books,
-- check for crossed or inverted books,
-- check spread sanity,
-- check missing-token or missing-market mapping cases,
-- inspect repeated hashes and stale timestamps,
-- inspect a few Yes/No pairs manually.
+- remove `__pycache__` / `.pyc` junk,
+- inspect generated artifacts intentionally,
+- decide which generated data products should be versioned,
+- rebase local `main` before any push.
 
 ### Outputs
-- data-quality report,
-- failure-rate summary,
-- list of excluded markets or tokens,
-- explicit go / no-go judgment for the current polling state layer.
+- clean working tree,
+- explicit artifact commit policy for this stage,
+- synced branch state.
 
 ### Success
-- obvious corruption is rare or explainable,
-- bad rows can be flagged or excluded cleanly,
-- the current state layer can support first-pass research.
-
-### Failure
-- too many empty / stale / pathological books,
-- or the current polling layer proves too lossy for even conservative studies.
+- no accidental Python cache junk is tracked,
+- only intentional artifacts are committed,
+- branch divergence does not block the next research step.
 
 ---
 
-## Step 2 — First feature library
+## Step 2 — Diagnostics interpretation and gating rules
+### Status
+**In progress**
+
 ### Objective
-Build the first state-derived feature layer.
+Turn the first diagnostics outputs into explicit triage rules instead of passive reports.
 
 ### Concrete Tasks
-Compute, at minimum:
-- spread,
-- midpoint,
-- best-bid size,
-- best-ask size,
-- top-of-book imbalance,
-- basic microprice proxy,
-- last-trade minus midpoint,
-- bid/ask level counts,
-- simple staleness flags,
-- simple market quality score.
+- inspect stale-row behavior by market,
+- inspect repeated-hash concentration by market,
+- decide whether stale / repeated-hash thresholds should gate or only annotate,
+- decide whether current market-quality score is sufficient for first-pass filtering,
+- define explicit keep / watch / exclude rules.
 
 ### Outputs
-- features CSV or parquet,
-- feature definitions note,
-- first inspection report.
+- diagnostics interpretation note,
+- first market-quality / exclusion rules,
+- go / no-go decision on using current diagnostics for research-universe narrowing.
 
 ### Success
-- features are well-defined and reproducible,
-- obvious leakage risks are absent,
-- feature values match raw spot checks.
+- diagnostics are actionable rather than merely descriptive,
+- poor-quality markets can be excluded consistently,
+- the project has a concrete rule for when current polling state is “good enough”.
 
 ### Failure
-- features are ambiguous,
-- misaligned,
-- or too noisy to interpret.
+- diagnostics remain too ad hoc,
+- repeated-hash or stale behavior is too widespread to ignore,
+- or threshold choices prove too unstable to trust.
 
 ---
 
 ## Step 3 — Tradability and universe narrowing
+### Status
+**Planned**
+
 ### Objective
 Measure which markets are actually researchable.
 
 ### Concrete Tasks
-- compute spread distributions,
+- compute spread distributions from the current feature / diagnostics outputs,
 - compute depth distributions,
 - bucket by market and token,
 - rank markets by practical quality,
@@ -228,7 +285,10 @@ Measure which markets are actually researchable.
 
 ---
 
-## Step 4 — First maker-markout scaffold
+## Step 4 — First conservative maker-markout scaffold
+### Status
+**Planned**
+
 ### Objective
 Build the first conservative maker-first experiment.
 
@@ -251,16 +311,19 @@ Build the first conservative maker-first experiment.
 
 ### Failure
 - the experiment reveals no plausible maker edge,
-- or the current state layer is too weak to support the assumptions honestly.
+- or the current state / diagnostics layer is too weak to support the assumptions honestly.
 
 ---
 
 ## Step 5 — Cheap stale-anchor diagnostics
+### Status
+**Postponed**
+
 ### Objective
 Test the stale-display direction cheaply before investing heavily.
 
 ### Concrete Tasks
-- define stale / lagged-display proxy from the state layer,
+- define stale / lagged-display proxy from the state / feature layer,
 - look for subsequent price response,
 - bucket by spread, depth, and market quality,
 - test whether the effect survives basic controls.
@@ -269,13 +332,16 @@ Test the stale-display direction cheaply before investing heavily.
 - simple event study,
 - falsification memo.
 
-### Success
-- either the effect looks real enough to keep,
-- or it is killed cheaply.
+### Notes
+- This remains a valid research direction,
+- but it is not the next implementation priority until tradability and maker-markout basics exist.
 
 ---
 
 ## Step 6 — Minimal crypto fair-value alignment
+### Status
+**Postponed**
+
 ### Objective
 Test whether the crypto-linked direction has enough structure to deserve further work.
 
@@ -291,59 +357,82 @@ Test whether the crypto-linked direction has enough structure to deserve further
 - residual diagnostic report,
 - keep / kill recommendation.
 
-### Success
-- the direction becomes evidence-backed rather than speculative.
+### Notes
+- This remains a valid later branch,
+- but it is not the next implementation priority while maker-first microstructure remains the lead path.
 
 ---
 
 ## Current Week-1 / Week-2 Split
 
 ## Week 1
-Must-have:
+### Status
+**Mostly completed**
+
+Must-have completed:
 - metadata tables,
 - raw books collector,
 - books state builder,
-- data-quality diagnostics,
-- first feature layer.
+- feature-input freeze,
+- first stable feature layer,
+- first diagnostics layer.
 
-Nice-to-have:
-- first tradability report,
-- first maker-markout scaffold.
+Remaining from the spirit of week 1:
+- convert diagnostics output into explicit gating / triage decisions.
 
 ## Week 2
+### Status
+**Current focus**
+
 Must-have:
+- diagnostics interpretation and gating rules,
 - tradability report,
 - narrowed research universe,
-- first conservative maker-markout run,
-- first go / no-go memo on maker-first.
+- first conservative maker-markout scaffold.
 
 Nice-to-have:
-- cheap stale-anchor test,
-- minimal crypto fair-value alignment,
-- event enrichment if it becomes necessary.
+- first go / no-go memo on maker-first,
+- cheap stale-anchor test if current data quality is strong enough,
+- event enrichment only if it becomes necessary.
+
+---
+
+## Next 3 Highest-Priority Tasks
+
+1. **Finalize repo hygiene and branch sync**
+   - remove Python cache junk,
+   - make intentional artifact/versioning decisions,
+   - rebase local `main` before push.
+
+2. **Turn diagnostics into explicit gating rules**
+   - decide how stale rows, repeated hashes, and market-quality score affect keep / exclude decisions.
+
+3. **Produce the first tradability / active-universe report**
+   - rank markets by practical research quality,
+   - define the first active universe for maker-markout work.
 
 ---
 
 ## Immediate Next Tasks
 
-1. Build the first **state-derived feature computation layer**.
-2. Build the first **data-quality diagnostics** on the current state output.
-3. Build the first **tradability report** and define a narrower active universe.
-4. Build the first **maker markout experiment scaffold**.
+1. Clean repo hygiene on the Debian server and sync local `main`.
+2. Interpret the current diagnostics outputs and define first exclusion / gating rules.
+3. Build the first tradability report and active research-universe definition.
+4. Start the first conservative maker-markout scaffold on the narrowed universe.
 
-That is the highest-information next sequence.
+That is now the highest-information next sequence.
 
 ---
 
 ## Success Criteria for the Next Milestone
 
 The next milestone is successful if:
-- the current polling-based state layer survives basic integrity checks,
+- the current diagnostics layer produces explicit keep / exclude rules,
 - the project can rank markets by tradability,
-- the first feature layer is stable and interpretable,
-- and the first maker-markout study can be run without obviously dishonest assumptions.
+- a narrower active universe is defined clearly,
+- and the first maker-markout scaffold can be run on that universe without obviously dishonest assumptions.
 
-If those conditions fail, the project should repair data and state quality before building more research logic.
+If those conditions fail, the project should repair data quality / collection cadence / diagnostics logic before building more research logic.
 
 ---
 
@@ -354,6 +443,7 @@ The following are not immediate goals of this phase:
 - building a portfolio optimizer,
 - training large ML models,
 - engineering a full websocket + reconciliation system before first evidence exists,
+- rebuilding ingestion or feature scaffolding that already exists,
 - or optimizing strategy complexity before signal validity is established.
 
 Those may become relevant later, but only after the current backbone earns its keep.
@@ -362,16 +452,19 @@ Those may become relevant later, but only after the current backbone earns its k
 
 ## Summary
 
-The project has crossed the line from concept to working backbone.
+The project has crossed the line from working backbone into first research-quality diagnostics.
 
 Current implemented stack:
 - metadata refresh,
 - token mapping,
 - raw order-book polling,
-- flat top-of-book state builder.
+- flat top-of-book state builder,
+- feature-input freeze,
+- stable feature set `v0_1`,
+- feature diagnostics.
 
 The roadmap should now stay narrow:
-- validate data quality,
-- compute first features,
+- keep the repo clean and synced,
+- turn diagnostics into explicit gating rules,
 - measure tradability,
 - and run the first conservative maker-quality studies.
