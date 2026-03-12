@@ -2,7 +2,7 @@
 
 ## Highlighted Updates
 
-This document has been updated to reflect the now-implemented diagnostics interpretation layer (market gating + tradability + active universe) on top of the stable feature pipeline, and the updated near-term priority toward conservative maker-markout scaffolding.
+This document has been updated to reflect the now-implemented conservative maker-markout scaffold downstream of the diagnostics + tradability + active-universe layers.
 
 ### New since the previous version
 - The dedicated diagnostics interpretation layer is now implemented under reporting as `build_tradability_report.py`.
@@ -16,6 +16,7 @@ This document has been updated to reflect the now-implemented diagnostics interp
   - latest tradability manifest.
 - Gating thresholds are now explicit and centralized for conservative keep/watch/exclude decisions.
 - The focused tradability test passes (plus diagnostics test slice).
+- The first conservative maker-markout scaffold is now implemented as an experiment/reporting layer (row-level and market-level outputs + latest manifest).
 
 ### Outdated assumptions removed
 - The next immediate task is no longer “implement diagnostics interpretation/gating”; that layer now exists.
@@ -39,7 +40,7 @@ The goal is not to rush into a bot or accumulate loosely related ideas. The goal
 
 ## Current Phase
 
-**Phase 1 — minimum data backbone plus stable feature set, diagnostics, and first explicit market gating/tradability layer implemented; universe narrowing for first maker-markout beginning**
+**Phase 1 — minimum data backbone plus stable feature set, diagnostics, tradability gating, and first conservative maker-markout scaffold implemented**
 
 The project has moved beyond pure data plumbing and beyond the first reproducible feature stage.
 
@@ -52,7 +53,7 @@ Current reality:
 - a first stable feature set `v0_1` has been built successfully from those frozen inputs,
 - a diagnostics layer on top of the stable feature set exists and runs successfully,
 - a downstream tradability/gating layer now converts diagnostics into keep/watch/exclude plus active-universe outputs,
-- and the next concrete task is conservative maker-markout scaffolding over that keep universe, not pipeline redesign.
+- and the maker-markout scaffold now produces first-pass adverse-selection diagnostics for active-universe triage.
 
 This is still an early research-stage system, but it is no longer just a design document set, it is no longer only an ingestion/state project, and it is no longer waiting on its first reporting layer.
 
@@ -227,6 +228,19 @@ Implemented and working:
 Current implementation note:
 - this remains a reporting/triage layer and does not mutate diagnostics or stable feature-set artifacts.
 
+#### 8. Conservative maker-markout scaffold
+Implemented and working:
+- consumes latest tradability manifest + active-universe CSV + latest feature-set manifest + stable feature CSV,
+- applies explicit candidate-row selection (active universe only, valid IDs, spread > 0, non-stale, minimum quality),
+- computes row-step forward midpoint markouts for passive buy/sell quote diagnostics,
+- writes row-level markout CSV + market-summary CSV,
+- writes experiment JSON + latest maker-markout manifest,
+- exposed through CLI `build-maker-markout`,
+- callable via `scripts/run_build_maker_markout.sh`.
+
+Current implementation note:
+- this is explicitly a conservative triage scaffold (not execution PnL, no queue/fill/fee model).
+
 ---
 
 ## Current Project Structure
@@ -244,6 +258,7 @@ The current repo should be understood approximately as:
   - `run_build_feature_set_v0_1.sh`
   - `run_build_feature_diagnostics.sh`
   - `run_build_tradability_report.sh`
+  - `run_build_maker_markout.sh`
   - GitHub / workflow helper scripts
 - `src/pmre/`
   - `config.py`
@@ -263,6 +278,7 @@ The current repo should be understood approximately as:
     - `build_feature_diagnostics.py`
     - `build_tradability_report.py`
   - `experiments/`
+    - `build_maker_markout_report.py`
 - `tests/`
   - metadata refresh test
   - raw books collector test
@@ -271,6 +287,7 @@ The current repo should be understood approximately as:
   - feature set `v0_1` test
   - feature diagnostics test
   - tradability report test
+  - maker markout report test
   - smoke test
 - `data/`
   - `raw/`
