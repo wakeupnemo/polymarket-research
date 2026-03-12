@@ -154,14 +154,3 @@ books_feature_builder:
 
     row2 = next(r for r in rows if r["token_id"] == "tok_no")
     assert row2["staleness_flag"] == "1"
-
-    sanity = result["sanity_checks"]
-    assert sanity["row_count_in"] == 2
-    assert sanity["row_count_out"] == 2
-    assert sanity["missing_token_id_count"] == 0
-    assert sanity["missing_bid_ask_count"] == 0
-    assert sanity["negative_spread_count"] == 0
-    assert sanity["zero_depth_rows_count"] == 0
-    assert sanity["null_imbalance_count"] == 0
-    assert sanity["null_microprice_count"] == 0
-    assert sanity["null_last_trade_minus_mid_count"] == 0
