@@ -131,15 +131,7 @@ def build_books_features(config_path: str | Path) -> dict[str, Any]:
         "staleness_flag",
     ]
 
-    row_count_in = 0
-    row_count_out = 0
-    missing_token_id_count = 0
-    missing_bid_ask_count = 0
-    negative_spread_count = 0
-    zero_depth_rows_count = 0
-    null_imbalance_count = 0
-    null_microprice_count = 0
-    null_last_trade_minus_mid_count = 0
+    row_count = 0
 
     with state_csv.open("r", encoding="utf-8", newline="") as in_fh, output_csv.open("w", encoding="utf-8", newline="") as out_fh:
         reader = csv.DictReader(in_fh)
@@ -147,12 +139,6 @@ def build_books_features(config_path: str | Path) -> dict[str, Any]:
         writer.writeheader()
 
         for row in reader:
-            row_count_in += 1
-
-            token_id = _to_str(row.get("token_id"))
-            if not token_id:
-                missing_token_id_count += 1
-
             best_bid_price = _parse_float(row.get("best_bid_price"))
             best_ask_price = _parse_float(row.get("best_ask_price"))
             best_bid_size = _parse_float(row.get("best_bid_size"))
@@ -163,36 +149,18 @@ def build_books_features(config_path: str | Path) -> dict[str, Any]:
             bid_levels_count = _parse_int(row.get("bid_levels_count"))
             ask_levels_count = _parse_int(row.get("ask_levels_count"))
 
-            if best_bid_price is None or best_ask_price is None:
-                missing_bid_ask_count += 1
-
             if midpoint is None and best_bid_price is not None and best_ask_price is not None:
                 midpoint = (best_bid_price + best_ask_price) / 2.0
 
             if spread is None and best_bid_price is not None and best_ask_price is not None:
                 spread = best_ask_price - best_bid_price
 
-            if spread is not None and spread < 0:
-                negative_spread_count += 1
-
-            bid_size_value = best_bid_size or 0.0
-            ask_size_value = best_ask_size or 0.0
-            if (bid_size_value + ask_size_value) <= 0:
-                zero_depth_rows_count += 1
-
             top_of_book_imbalance = _compute_top_of_book_imbalance(best_bid_size, best_ask_size)
-            if top_of_book_imbalance is None:
-                null_imbalance_count += 1
-
             microprice_proxy = _compute_microprice_proxy(best_bid_price, best_ask_price, best_bid_size, best_ask_size)
-            if microprice_proxy is None:
-                null_microprice_count += 1
 
             last_trade_minus_mid = None
             if last_trade_price is not None and midpoint is not None:
                 last_trade_minus_mid = last_trade_price - midpoint
-            if last_trade_minus_mid is None:
-                null_last_trade_minus_mid_count += 1
 
             collector_ms = _iso_to_epoch_ms(_to_str(row.get("collector_ts")))
             book_ms = _parse_int(row.get("book_timestamp"))
@@ -217,7 +185,7 @@ def build_books_features(config_path: str | Path) -> dict[str, Any]:
                 "market_id": _to_str(row.get("market_id")),
                 "event_id": _to_str(row.get("event_id")),
                 "outcome": _to_str(row.get("outcome")),
-                "token_id": token_id,
+                "token_id": _to_str(row.get("token_id")),
                 "clob_market": _to_str(row.get("clob_market")),
                 "hash": _to_str(row.get("hash")),
                 "spread": _fmt_float(spread),
@@ -232,19 +200,7 @@ def build_books_features(config_path: str | Path) -> dict[str, Any]:
                 "staleness_flag": str(staleness_flag),
             }
             writer.writerow(out_row)
-            row_count_out += 1
-
-    sanity_checks = {
-        "row_count_in": row_count_in,
-        "row_count_out": row_count_out,
-        "missing_token_id_count": missing_token_id_count,
-        "missing_bid_ask_count": missing_bid_ask_count,
-        "negative_spread_count": negative_spread_count,
-        "zero_depth_rows_count": zero_depth_rows_count,
-        "null_imbalance_count": null_imbalance_count,
-        "null_microprice_count": null_microprice_count,
-        "null_last_trade_minus_mid_count": null_last_trade_minus_mid_count,
-    }
+            row_count += 1
 
     manifest = {
         "run_ts": datetime.now(timezone.utc).isoformat(),
@@ -253,13 +209,10 @@ def build_books_features(config_path: str | Path) -> dict[str, Any]:
         "books_state_csv": str(state_csv),
         "output_csv": str(output_csv),
         "manifest_json": str(output_manifest),
-        "row_count": row_count_out,
-        "sanity_checks": sanity_checks,
+        "row_count": row_count,
     }
 
     output_manifest.write_text(json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8")
     latest_output_manifest.write_text(json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8")
-
-    print(f"[build-books-features] sanity_checks={json.dumps(sanity_checks, ensure_ascii=False, sort_keys=True)}")
 
     return manifest
