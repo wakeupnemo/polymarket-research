@@ -2,31 +2,29 @@
 
 ## Highlighted Updates
 
-This document has been updated to reflect the first implemented research feature layer, the first real feature build on project data, and the newly implemented feature diagnostics layer on top of the stable feature set.
+This document has been updated to reflect the now-implemented diagnostics layer on top of the stable feature-set pipeline, the successful live diagnostics run on real project data, and the current repo-sync reality on the Debian server.
 
 ### New since the previous version
-- A dedicated books-features builder now exists (`build-books-features`) for direct state-to-features output without the freeze-based `v0_1` chain.
-- The books-features job now emits explicit sanity diagnostics in the run manifest and latest manifest.
-- Sanity diagnostics now include:
-  - row count in/out,
-  - missing `token_id` count,
-  - missing bid/ask count,
-  - negative spread count,
-  - zero-depth row count,
-  - null imbalance count,
-  - null microprice count,
-  - null `last_trade_minus_mid` count.
-- The first stable feature set `v0_1` remains available and unchanged for freeze-based research runs.
-- A dedicated feature diagnostics builder now exists (`build-feature-diagnostics`) and consumes only the latest stable feature-set manifest/artifact.
-- Diagnostics outputs now include aggregate quality counts plus market-level summary statistics and a latest diagnostics manifest.
-- The workflow remains GitHub-centered for code, while ChatGPT Project files are used for persistent context.
+- The dedicated diagnostics layer on top of `feature_set_v0_1` is now implemented and present in the repo.
+- The current implemented chain is now:
+  - metadata -> tokens -> raw books -> flat state -> frozen feature inputs -> feature set `v0_1` -> feature diagnostics
+- The diagnostics layer is now callable from the CLI and from a shell runner.
+- The diagnostics layer now writes:
+  - diagnostics JSON summary,
+  - market-summary CSV,
+  - latest diagnostics manifest.
+- The diagnostics layer has been run successfully on the current real feature artifact.
+- The latest successful diagnostics run covered `60` feature rows and produced concrete aggregate diagnostics.
+- The diagnostics test passes.
+- The focused feature + diagnostics test slice passes.
+- The broader feature/smoke test slice passes.
+- GitHub `main` already contained the diagnostics files; the Debian server matched those targeted files locally, so no additional diagnostics implementation delta was required on the server.
 
 ### Outdated assumptions removed
-- The project no longer stops at metadata, raw books, flat state, and planned feature logic.
-- The next immediate task is no longer “build the first feature layer”; that layer now exists.
-- The first feature output should not be treated as final research truth; it is a simple diagnostic product.
-- Websocket logic, event enrichment, and simulator assumptions are still not part of the feature job.
-- Persistent Project context files should not be assumed to be stored on the Debian server.
+- The next immediate task is no longer “implement the diagnostics layer”; that layer already exists and runs successfully.
+- The current repo does not need more ingestion scaffolding, more feature-builder scaffolding, or a new smoke experiment for this step.
+- The current next step should not be framed as diagnostics code design; it is now diagnostics interpretation, repo hygiene, and deciding the next research delta.
+- The diagnostics layer should not be treated as a final research decision engine; it is still a first-pass reporting and triage layer.
 
 ---
 
@@ -44,9 +42,9 @@ The goal is not to rush into a bot or accumulate loosely related ideas. The goal
 
 ## Current Phase
 
-**Phase 1 — minimum data backbone plus first stable feature layer implemented; research diagnostics beginning**
+**Phase 1 — minimum data backbone plus first stable feature layer and first diagnostics layer implemented; first interpretation and research triage beginning**
 
-The project has moved beyond pure data plumbing and into the first reproducible feature stage.
+The project has moved beyond pure data plumbing and beyond the first reproducible feature stage.
 
 Current reality:
 - metadata universe refresh works,
@@ -55,9 +53,10 @@ Current reality:
 - top-of-book state is being built from raw snapshots,
 - the feature-job input set is frozen explicitly,
 - a first stable feature set `v0_1` has been built successfully from those frozen inputs,
-- and a first diagnostics layer now runs on top of `feature_set_v0_1` outputs.
+- a diagnostics layer on top of the stable feature set now exists and runs successfully,
+- and the next concrete task is to interpret diagnostics and decide the next smallest research delta, not to redesign the pipeline.
 
-This is still an early research-stage system, but it is no longer just a design document set and it is no longer only an ingestion/state project.
+This is still an early research-stage system, but it is no longer just a design document set, it is no longer only an ingestion/state project, and it is no longer waiting on its first reporting layer.
 
 ---
 
@@ -167,6 +166,54 @@ Important feature semantics now in use:
 - `market_quality_score` is currently an additive/subtractive first-pass diagnostic score,
   - not a normalized final research metric.
 
+#### 6. Diagnostics reporting layer
+Implemented and working:
+- consumes the latest stable feature-set manifest,
+- loads the current feature-set CSV,
+- writes a diagnostics JSON summary,
+- writes a market-summary CSV,
+- writes a latest diagnostics manifest,
+- is exposed through the CLI as `build-feature-diagnostics`,
+- and is callable through `scripts/run_build_feature_diagnostics.sh`.
+
+Current diagnostics coverage includes:
+- total row count,
+- stale row count and stale row fraction,
+- null / missing spread count,
+- non-positive spread count,
+- wide-spread count using an explicit threshold,
+- zero / empty top-size count,
+- null imbalance count,
+- null microprice count,
+- repeated-hash diagnostics when `hash` exists,
+- and market-level summary statistics.
+
+Current market-summary outputs include:
+- `market_id`
+- `row_count`
+- `stale_row_fraction`
+- `median_spread`
+- `p90_spread`
+- `median_best_bid_size`
+- `median_best_ask_size`
+- `zero_or_empty_top_size_fraction`
+- `repeated_hash_fraction`
+- `mean_market_quality_score`
+- `median_market_quality_score`
+
+Current live implementation result:
+- the latest successful diagnostics run processed `60` rows from the current stable feature set,
+- found `26` stale rows,
+- found stale-row fraction `0.43333333333333335`,
+- found `0` missing-spread rows,
+- found `0` non-positive-spread rows,
+- found `0` wide-spread rows at threshold `0.1`,
+- found `0` zero/empty top-size rows,
+- found `0` null imbalance rows,
+- found `0` null microprice rows,
+- found `26` repeated-hash rows,
+- and produced mean / median market-quality values without error.
+
 ---
 
 ## Current Project Structure
@@ -182,7 +229,6 @@ The current repo should be understood approximately as:
   - `run_build_books_state.sh`
   - `run_freeze_feature_inputs.sh`
   - `run_build_feature_set_v0_1.sh`
-  - `run_build_books_features.sh`
   - `run_build_feature_diagnostics.sh`
   - GitHub / workflow helper scripts
 - `src/pmre/`
@@ -199,17 +245,17 @@ The current repo should be understood approximately as:
     - `freeze_feature_inputs.py`
     - `build_feature_set_v0_1.py`
     - `build_books_features.py`
-  - `experiments/`
   - `reporting/`
     - `build_feature_diagnostics.py`
+  - `experiments/`
 - `tests/`
   - metadata refresh test
   - raw books collector test
   - books state builder test
   - feature input freeze test
   - feature set `v0_1` test
-  - books-features builder test
-  - feature-diagnostics builder test
+  - feature diagnostics test
+  - smoke test
 - `data/`
   - `raw/`
   - `reference/`
@@ -399,6 +445,58 @@ These define:
 - the row count,
 - and the diagnostic feature definitions.
 
+### Diagnostics layer
+
+#### Diagnostics JSON summary
+Stored under:
+- `data/features/polymarket/diagnostics/feature_diagnostics_<feature_set_id>.json`
+
+This contains:
+- run metadata,
+- input feature manifest path,
+- input feature CSV path,
+- aggregate diagnostics summary,
+- output paths.
+
+#### Market-summary CSV
+Stored under:
+- `data/features/polymarket/diagnostics/feature_diagnostics_<feature_set_id>_market_summary.csv`
+
+This contains market-level rollups for diagnostics and triage.
+
+#### Latest diagnostics manifest
+Stored under:
+- `data/features/polymarket/diagnostics/latest_feature_diagnostics_manifest.json`
+
+This defines:
+- the latest diagnostics run,
+- the current feature-set ID,
+- the input feature artifact,
+- the diagnostics JSON path,
+- the market-summary CSV path.
+
+---
+
+## Immediate Next Tasks
+
+The next concrete tasks should now be:
+
+1. Clean repo hygiene on the Debian server:
+   - remove `__pycache__` / `.pyc` junk before any intentional commit,
+   - inspect which generated artifacts should be versioned,
+   - and rebase local `main` before any push.
+
+2. Interpret the diagnostics outputs rather than redesign the pipeline:
+   - decide whether current stale / repeated-hash behavior should gate markets or tokens,
+   - decide whether the explicit thresholds are useful enough for the next research loop,
+   - and identify whether the next delta belongs in diagnostics thresholds, collection cadence, or first markout-style analysis.
+
+3. Keep the implementation sequence conservative:
+   - no duplicate ingestion work,
+   - no duplicate feature-builder scaffolding,
+   - no new smoke experiment for this step,
+   - and no redesign of the stable feature layer unless diagnostics interpretation shows a real need.
+
 ---
 
 ## What Is Validated
@@ -422,6 +520,13 @@ At the current stage, the following should be treated as validated.
 - The feature job input boundary can be frozen reproducibly.
 - A first stable feature-set version `v0_1` can be built from the frozen input bundle.
 - The current live feature build succeeds on the real project data.
+- The diagnostics layer exists in the repo and is wired into the CLI.
+- The diagnostics shell runner exists and runs successfully.
+- The diagnostics job successfully consumes the latest stable feature-set manifest and writes all expected outputs.
+- The diagnostics test passes.
+- The focused feature + diagnostics test subset passes.
+- The broader feature/smoke test slice passes.
+- GitHub `main` already contains the diagnostics implementation and the local Debian checkout matched the targeted diagnostics files without extra patching.
 - The GitHub repository is now initialized, connected, and pushed successfully.
 - The practical workflow now supports:
   - GitHub for code truth,
@@ -434,6 +539,7 @@ At the current stage, the following should be treated as validated.
 - `token_id` is usable in the current backbone.
 - `outcome` to `token_id` mapping is usable in the current backbone.
 - The current state artifact is sufficient to support a first stable diagnostic feature layer.
+- The current stable feature artifact is sufficient to support a first diagnostics reporting layer.
 
 ### Process validation
 The project has a clear operating mode:
@@ -451,6 +557,10 @@ The workflow now also has an explicit source-of-truth rule:
 - GitHub is the source of truth for code,
 - ChatGPT Project files are persistent context,
 - and server-side scripts should not depend on those context files existing locally.
+
+The current diagnostics step now also has an explicit implementation rule:
+- only the dedicated diagnostics layer should be added on top of the stable feature set,
+- without re-adding ingestion layers, feature-builder scaffolding, or duplicate smoke logic.
 
 ---
 
@@ -484,12 +594,13 @@ The following remain important and unvalidated.
 - whether schema drift or payload shape changes will create silent failure modes,
 - whether the initial token subset should be expanded or narrowed for research.
 
-### Diagnostic sufficiency of the first feature layer
-- whether `v0_1` features are enough for the first useful diagnostics,
+### Diagnostic sufficiency of the first reporting layer
+- whether the current stale / repeated-hash patterns are informative enough to drive market filtering,
+- whether the `wide_spread_threshold` and low-quality thresholds are calibrated well enough,
+- whether diagnostics outputs should remain purely external reports or should begin to drive gating,
 - whether the current `staleness_flag` logic is adequate for triage,
 - whether the simple `market_quality_score` is good enough for first-pass ranking,
-- which additional diagnostics should remain separate from the core stable schema,
-- and whether test expectations remain aligned with the current diagnostic scoring semantics.
+- and whether the next useful delta belongs in diagnostics interpretation, collection cadence, or first markout analysis.
 
 ---
 
@@ -530,155 +641,5 @@ The following are also currently deprioritized as immediate implementation targe
 - websocket ingestion before the first polling-based research loop is exploited,
 - overbuilt reconciliation before the first feature and markout studies exist,
 - simulator assumptions inside the first stable feature layer,
+- duplicate ingestion / feature scaffolding while the current stable pipeline already exists,
 - and making the server workflow depend on locally stored Project context files.
-
-These are not banned forever; they are just not the next smallest meaningful step.
-
----
-
-## Open Questions
-
-### Data and infrastructure
-1. Should event enrichment be added now or postponed until after the first experiments?
-2. Is the current polling cadence sufficient for first-pass research, or does it miss too much state?
-3. What is the minimum viable universe size for the first serious experiments?
-
-### State and integrity
-4. How should complement consistency between Yes and No books be checked?
-5. How should crossed, empty, or obviously stale books be flagged?
-6. What diagnostics best separate good data from unusable data?
-
-### Feature layer
-7. Which `v0_1` feature diagnostics are most informative for market triage?
-8. Which checks belong inside the stable feature schema versus inside a separate diagnostics job?
-9. When should `v0_2` be introduced, and what would justify expanding the stable schema?
-
-### Workflow and maintenance
-10. What is the smallest reliable routine for keeping ChatGPT Project context current while leaving code truth in GitHub?
-11. Which helper scripts should remain server-side, and which should be treated as optional?
-12. How much workflow automation is worth keeping before it becomes overhead?
-
-### Maker-first microstructure
-13. Can a conservative maker simulator be built from polling snapshots plus simple assumptions?
-14. Which features best separate good fills from toxic fills?
-15. Is positive maker EV concentrated in a narrow regime or absent altogether?
-
-### Crypto fair value
-16. What is the minimum honest fair-value model for short-horizon crypto contracts?
-17. Which contract families are easiest to parse and align first?
-18. Does fair-value deviation matter only when liquidity is already good?
-
-### Displayed-price / stale-anchor
-19. How often do stale-display episodes occur in markets that are actually tradable?
-20. Can anchor-like effects survive controls for spread, depth, and liquidity vacuum?
-21. Is this direction a real opportunity or mostly a falsification target?
-
----
-
-## Current Priorities
-
-### Priority 1 — data-quality diagnostics on top of `feature_set_v0_1`
-Before serious experiments, the project now needs a first diagnostics layer derived from the implemented feature set:
-- spread pathologies,
-- stale rows,
-- empty or one-sided books,
-- suspicious hash repetition,
-- last-trade missingness,
-- and market quality ranking.
-
-### Priority 2 — tradability diagnostics and universe narrowing
-The next outputs should establish:
-- spread regimes,
-- depth regimes,
-- book quality,
-- stale / dead market detection,
-- and which subset of markets is worth serious simulation.
-
-### Priority 3 — first maker markout study
-The next high-information experiment is a maker-first markout and toxicity study under conservative assumptions.
-
-### Priority 4 — keep crypto fair value simple
-The crypto direction should begin with the crudest honest model that can be aligned to contracts cleanly.
-
-### Priority 5 — treat stale-anchor as a falsification-first direction
-This direction should be tested cheaply and skeptically. It should not receive heavy implementation effort until it proves that the effect is both real and economically meaningful.
-
----
-
-## Immediate Next Tasks
-
-### Task 1
-Implement the first **data-quality diagnostics job** on top of `feature_set_v0_1`:
-- spread sanity,
-- stale-row frequency,
-- one-sided / empty-book checks,
-- repeated-hash diagnostics,
-- last-trade missingness diagnostics,
-- and market quality summaries.
-
-### Task 2
-Implement the first **tradability report**:
-- spread distributions,
-- top-size distributions,
-- market quality ranking,
-- and a proposed narrowed research universe.
-
-### Task 3
-Implement the first **maker markout experiment scaffold**:
-- define decision timestamps,
-- define conservative fill assumptions,
-- define markout horizons,
-- and compute outcome distributions by regime bucket.
-
-### Task 4
-Keep the GitHub-centered workflow simple:
-- treat GitHub as code truth,
-- treat ChatGPT Project files as persistent context,
-- and avoid server-side dependence on local copies of context documents.
-
-### Task 5
-Decide whether **event enrichment** is needed before the first serious report.
-
----
-
-## Current Go / No-Go Read
-
-### Go
-- metadata layer,
-- raw polling collector,
-- top-of-book state builder,
-- frozen feature-input boundary,
-- first stable feature set `v0_1`,
-- GitHub-centered code workflow.
-
-### Still unknown
-- whether the current polling backbone is sufficient for real microstructure research,
-- whether the first feature layer is strong enough to rank tradability reliably,
-- whether maker alpha survives conservative execution assumptions.
-
-### No-go for now
-- broad strategy claims,
-- complex fair-value modeling,
-- fully automated execution work,
-- deep websocket engineering before the first research loop proves it is necessary,
-- treating the first diagnostic feature layer as final research truth,
-- and bloating the workflow with unnecessary context-file mirroring on the server.
-
----
-
-## Summary
-
-The project now has a real, working first backbone plus first stable feature layer:
-
-- metadata universe,
-- token mapping,
-- raw book collection,
-- flat top-of-book state construction,
-- reproducible frozen feature inputs,
-- feature set `v0_1`,
-- and a working GitHub-centered code workflow.
-
-That is enough to move into the next stage of week-1 / early week-2 research mode.
-
-The next job is not to add more infrastructure for its own sake.  
-The next job is to use the existing feature layer to produce the first honest diagnostics, narrow the active research universe, and support the first conservative maker-quality studies.
