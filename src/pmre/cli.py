@@ -8,6 +8,7 @@ from pmre.reporting.build_feature_diagnostics import build_feature_diagnostics
 from pmre.features.build_feature_set_v0_1 import build_feature_set_v0_1
 from pmre.features.build_books_features import build_books_features
 from pmre.features.freeze_feature_inputs import freeze_feature_inputs
+from pmre.reporting.build_tradability_report import build_tradability_report
 from pmre.ingest.metadata_refresh import run_metadata_refresh
 from pmre.ingest.raw_books_collector import run_raw_books_collection
 from pmre.state.build_books_state import build_books_state
@@ -44,6 +45,12 @@ def main() -> None:
         help="Build diagnostics from the latest stable feature-set manifest",
     )
     feature_diagnostics.add_argument("--config", default="configs/base.yaml", help="Path to YAML config")
+
+    tradability_report = subparsers.add_parser(
+        "build-tradability-report",
+        help="Build market gating + active universe report from diagnostics outputs",
+    )
+    tradability_report.add_argument("--config", default="configs/base.yaml", help="Path to YAML config")
 
     args = parser.parse_args()
 
@@ -84,6 +91,11 @@ def main() -> None:
 
     if args.command == "build-feature-diagnostics":
         result = build_feature_diagnostics(args.config)
+        print(json.dumps(result, indent=2))
+        return
+
+    if args.command == "build-tradability-report":
+        result = build_tradability_report(args.config)
         print(json.dumps(result, indent=2))
         return
 
