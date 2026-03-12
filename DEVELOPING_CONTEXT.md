@@ -1,73 +1,62 @@
 # Developing Context
 
-## Current development focus
+## Current Development Focus
+- The missing diagnostics delta has been resolved in repo reality: the diagnostics layer already exists, is wired into the CLI, and runs successfully on the Debian server.
+- Current focus has shifted from diagnostics implementation to:
+  - interpreting diagnostics outputs,
+  - keeping repo hygiene clean,
+  - deciding what generated artifacts should be committed,
+  - and identifying the next smallest research delta.
 
-Continue iterative development on two parallel feature paths:
+## Decisions Made In This Chat
+- Do not add more ingestion, more feature-builder scaffolding, or a new smoke experiment.
+- Inspect local repo reality first before proposing changes.
+- GitHub `main` already contained:
+  - `src/pmre/reporting/build_feature_diagnostics.py`
+  - diagnostics CLI wiring in `src/pmre/cli.py`
+  - `scripts/run_build_feature_diagnostics.sh`
+  - `tests/test_build_feature_diagnostics.py`
+- The Debian server matched those targeted diagnostics files locally; no extra diagnostics code patch was needed.
+- The diagnostics job was run successfully against the current stable feature-set manifest.
+- The diagnostics layer produced all expected outputs:
+  - diagnostics JSON
+  - market-summary CSV
+  - latest diagnostics manifest
+- Validation passed:
+  - `tests/test_build_feature_diagnostics.py`
+  - focused feature + diagnostics test slice
+  - broader feature/smoke test slice
 
-1) metadata -> tokens -> raw books -> books state -> frozen feature inputs -> feature set `v0_1`
-2) metadata -> tokens -> raw books -> books state -> books features
+## Current Coding Task
+- No new diagnostics implementation is required immediately.
+- Current coding/repo task is:
+  - remove `__pycache__` / `.pyc` junk,
+  - inspect local generated artifacts intentionally,
+  - rebase local `main` before pushing,
+  - and decide whether diagnostics outputs or only feature/freeze artifacts should be committed.
+- Current research task is:
+  - inspect diagnostics results,
+  - decide whether stale/repeated-hash behavior should drive gating or triage,
+  - and choose the next minimal delta accordingly.
 
-The immediate focus is using the new diagnostics outputs to drive first tradability filters and reporting.
+## Current Runtime Reality
+- Latest stable feature-set manifest points to freeze `20260311T214230Z__20260312T175753Z`.
+- Latest feature-set row count is `60`.
+- Latest diagnostics run succeeded and reported:
+  - `stale_row_count = 26`
+  - `stale_row_fraction = 0.43333333333333335`
+  - `missing_spread_count = 0`
+  - `non_positive_spread_count = 0`
+  - `wide_spread_count = 0`
+  - `zero_or_empty_top_size_count = 0`
+  - `null_imbalance_count = 0`
+  - `null_microprice_count = 0`
+  - `repeated_hash_row_count = 26`
 
-## What was decided in this chat
-
-- Step 2 began with a strict feature-job input freeze.
-- The feature job is allowed to use only:
-  - latest books state manifest,
-  - corresponding `books_state_<run_id>.csv`,
-  - `markets.csv`,
-  - `tokens.csv`.
-- Do **not** add:
-  - websocket logic,
-  - event enrichment,
-  - simulator assumptions.
-- A first stable feature schema now exists:
-  - `feature_set_version = v0_1`
-- `v0_1` computes only:
-  - `spread`
-  - `midpoint`
-  - `best_bid_size`
-  - `best_ask_size`
-  - `top_of_book_imbalance`
-  - `microprice_proxy`
-  - `last_trade_minus_mid`
-  - `bid_levels_count`
-  - `ask_levels_count`
-  - `staleness_flag`
-  - `market_quality_score`
-
-## Current coding task
-
-Diagnostics layer implementation is complete and integrated into the CLI + runner + test path.
-
-Current task is to consume the generated diagnostics artifacts for first-pass market screening and reporting, while keeping the stable feature schema unchanged.
-
-## Important implementation constraints and assumptions
-
-- `STATE.md` is the source of full project context. Use it for anything broader.
-- Keep new code modular and aligned with the current repo layout.
-- Prefer copy-paste-ready bash and Python.
-- Use the existing config / CLI / runner pattern.
-- Keep the feature layer diagnostic and conservative.
-- Do not silently widen the feature schema.
-- Do not treat `event_id` as reliable.
-- Current live collection path is polling, not websocket.
-- Current state layer is top-of-book snapshot state, not reconciled orderbook state.
-- The feature builder is already compatible with the real frozen-input manifest shape.
-- A separate `build-books-features` job now exists and reads the latest books-state manifest directly.
-- The books-features builder now stores sanity diagnostics (`row_count_in/out`, missing IDs/sides, negative spreads, zero-depth, null derived metrics).
-- The current `market_quality_score` is an additive/subtractive first-pass diagnostic score, not a normalized final metric.
-- The current `staleness_flag` in `v0_1` includes:
-  - missing bid or ask,
-  - `spread <= 0`,
-  - timestamp-age threshold,
-  - repeated hash too long,
-  - missing `last_trade_price` too many consecutive times.
-
-## Immediate next steps
-
-1. Run `build-feature-diagnostics` regularly after each stable feature-set build.
-2. Add a lightweight reporting step that reads diagnostics outputs and ranks/filter markets for tradability review.
-3. Keep thresholds explicit and configurable without changing the stable feature-set schema.
-4. Validate diagnostics behavior on larger live artifacts and document any threshold adjustments.
-5. After diagnostics-driven filtering, build the first narrowed research universe report.
+## Implementation Constraints / Assumptions
+- Smallest meaningful next step only.
+- Do not duplicate work already present in GitHub.
+- GitHub is the source of truth for code.
+- ChatGPT Project files are persistent context; do not assume they exist in the Debian checkout.
+- Keep diagnostics as a dedicated reporting layer on top of the stable feature pipeline unless there is a strong reason to fold anything into core feature generation.
+- Current local branch state observed in this chat: `main...origin/main [ahead 1, behind 2]`; rebase before push.
