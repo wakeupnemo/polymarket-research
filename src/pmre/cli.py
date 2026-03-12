@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import json
 
+from pmre.experiments.build_maker_markout_report import build_maker_markout_report
 from pmre.experiments.maker_markout_smoke import run_smoke
 from pmre.reporting.build_feature_diagnostics import build_feature_diagnostics
 from pmre.features.build_feature_set_v0_1 import build_feature_set_v0_1
@@ -52,6 +53,12 @@ def main() -> None:
     )
     tradability_report.add_argument("--config", default="configs/base.yaml", help="Path to YAML config")
 
+    maker_markout = subparsers.add_parser(
+        "build-maker-markout",
+        help="Build conservative snapshot-based maker markout report for active universe",
+    )
+    maker_markout.add_argument("--config", default="configs/base.yaml", help="Path to YAML config")
+
     args = parser.parse_args()
 
     if args.command == "smoke":
@@ -96,6 +103,11 @@ def main() -> None:
 
     if args.command == "build-tradability-report":
         result = build_tradability_report(args.config)
+        print(json.dumps(result, indent=2))
+        return
+
+    if args.command == "build-maker-markout":
+        result = build_maker_markout_report(args.config)
         print(json.dumps(result, indent=2))
         return
 
