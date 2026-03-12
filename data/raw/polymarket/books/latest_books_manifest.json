@@ -1,0 +1,50 @@
+{
+  "run_id": "20260311T214230Z",
+  "run_ts": "2026-03-11T21:42:40.842263+00:00",
+  "token_limit": 20,
+  "selected_token_count": 20,
+  "batch_size": 10,
+  "batch_count_per_iteration": 2,
+  "iterations": 3,
+  "jsonl_line_count": 6,
+  "output_jsonl": "/home/lev/polymarket-research/data/raw/polymarket/books/books_run_20260311T214230Z.jsonl",
+  "manifest_json": "/home/lev/polymarket-research/data/raw/polymarket/books/books_run_20260311T214230Z_manifest.json",
+  "tokens_csv": "/home/lev/polymarket-research/data/reference/polymarket/tokens.csv",
+  "selected_tokens_preview": [
+    {
+      "token_id": "75467129615908319583031474642658885479135630431889036121812713428992454630178",
+      "market_id": "531202",
+      "event_id": "",
+      "outcome": "Yes",
+      "token_index": "0"
+    },
+    {
+      "token_id": "3842963720267267286970642336860752782302644680156535061700039388405652129691",
+      "market_id": "531202",
+      "event_id": "",
+      "outcome": "No",
+      "token_index": "1"
+    },
+    {
+      "token_id": "8501497159083948713316135768103773293754490207922884688769443031624417212426",
+      "market_id": "540816",
+      "event_id": "",
+      "outcome": "Yes",
+      "token_index": "0"
+    },
+    {
+      "token_id": "2527312495175492857904889758552137141356236738032676480522356889996545113869",
+      "market_id": "540816",
+      "event_id": "",
+      "outcome": "No",
+      "token_index": "1"
+    },
+    {
+      "token_id": "98022490269692409998126496127597032490334070080325855126491859374983463996227",
+      "market_id": "540817",
+      "event_id": "",
+      "outcome": "Yes",
+      "token_index": "0"
+    }
+  ]
+}

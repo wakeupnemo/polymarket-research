@@ -1,0 +1,55 @@
+# Python
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Build / packaging
+build/
+dist/
+*.egg-info/
+
+# Editors / OS
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# Local secrets / env
+.env
+.env.*
+*.pem
+*.key
+
+# Generated local outputs
+logs/**
+!logs/.gitkeep
+
+reports/**
+!reports/.gitkeep
+
+# Generated ChatGPT Project upload bundle
+.project_context_upload/
+
+# Data: keep directory structure only, ignore generated contents
+data/**
+!data/
+!data/.gitkeep
+!data/raw/
+!data/raw/.gitkeep
+!data/reference/
+!data/reference/.gitkeep
+!data/state/
+!data/state/.gitkeep
+!data/features/
+!data/features/.gitkeep
+
+# Rule:
+# If you need tiny deterministic fixtures, store them in tests/fixtures/, not under data/.

@@ -1,0 +1,35 @@
+{
+  "feature_set_version": "v0_1",
+  "description": "Minimum stable feature schema for books-state derived research features.",
+  "inputs_allowed_only": [
+    "latest_books_state_manifest",
+    "books_state_csv",
+    "markets.csv",
+    "tokens.csv"
+  ],
+  "features": {
+    "spread": "best_ask_price - best_bid_price.",
+    "midpoint": "mid_price if already present, otherwise recomputed.",
+    "best_bid_size": "Top-of-book bid size as float.",
+    "best_ask_size": "Top-of-book ask size as float.",
+    "top_of_book_imbalance": "(best_bid_size - best_ask_size) / (best_bid_size + best_ask_size) when denominator > 0.",
+    "microprice_proxy": "(best_ask_price * best_bid_size + best_bid_price * best_ask_size) / (best_bid_size + best_ask_size) when denominator > 0.",
+    "last_trade_minus_mid": "last_trade_price - midpoint when both exist.",
+    "bid_levels_count": "Bid level count as integer.",
+    "ask_levels_count": "Ask level count as integer.",
+    "staleness_flag": "1 if bid/ask missing, spread <= 0, timestamp age exceeds threshold, hash repeats too long (> 2), or last_trade_price missing too long (> 2 consecutive snapshots).",
+    "market_quality_score": "Simple first-pass diagnostic score: add points for tight spread, both sides populated, and nonzero top sizes; subtract points for empty levels, pathological spread, and stale rows."
+  },
+  "non_goals": [
+    "websocket-derived features",
+    "event enrichment",
+    "simulator assumptions",
+    "queue position assumptions"
+  ],
+  "params": {
+    "stale_threshold_ms": 15000,
+    "quality_score_max_spread": 0.1,
+    "max_repeated_hash_count": 2,
+    "max_missing_last_trade_count": 2
+  }
+}

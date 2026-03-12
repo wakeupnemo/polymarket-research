@@ -1,0 +1,12 @@
+{"ts": "2026-03-01T12:00:00+00:00", "market_id": "demo-btc-above-50000", "token_id": "YES", "yes_bid": 0.438, "yes_ask": 0.451, "bid_size": 383, "ask_size": 74, "source": "mock"}
+{"ts": "2026-03-01T12:00:05+00:00", "market_id": "demo-btc-above-50000", "token_id": "YES", "yes_bid": 0.43, "yes_ask": 0.451, "bid_size": 237, "ask_size": 348, "source": "mock"}
+{"ts": "2026-03-01T12:00:10+00:00", "market_id": "demo-btc-above-50000", "token_id": "YES", "yes_bid": 0.421, "yes_ask": 0.441, "bid_size": 69, "ask_size": 94, "source": "mock"}
+{"ts": "2026-03-01T12:00:15+00:00", "market_id": "demo-btc-above-50000", "token_id": "YES", "yes_bid": 0.422, "yes_ask": 0.433, "bid_size": 96, "ask_size": 332, "source": "mock"}
+{"ts": "2026-03-01T12:00:20+00:00", "market_id": "demo-btc-above-50000", "token_id": "YES", "yes_bid": 0.423, "yes_ask": 0.45, "bid_size": 113, "ask_size": 164, "source": "mock"}
+{"ts": "2026-03-01T12:00:25+00:00", "market_id": "demo-btc-above-50000", "token_id": "YES", "yes_bid": 0.429, "yes_ask": 0.451, "bid_size": 81, "ask_size": 345, "source": "mock"}
+{"ts": "2026-03-01T12:00:30+00:00", "market_id": "demo-btc-above-50000", "token_id": "YES", "yes_bid": 0.434, "yes_ask": 0.445, "bid_size": 163, "ask_size": 73, "source": "mock"}
+{"ts": "2026-03-01T12:00:35+00:00", "market_id": "demo-btc-above-50000", "token_id": "YES", "yes_bid": 0.438, "yes_ask": 0.451, "bid_size": 264, "ask_size": 123, "source": "mock"}
+{"ts": "2026-03-01T12:00:40+00:00", "market_id": "demo-btc-above-50000", "token_id": "YES", "yes_bid": 0.442, "yes_ask": 0.463, "bid_size": 336, "ask_size": 467, "source": "mock"}
+{"ts": "2026-03-01T12:00:45+00:00", "market_id": "demo-btc-above-50000", "token_id": "YES", "yes_bid": 0.449, "yes_ask": 0.461, "bid_size": 342, "ask_size": 377, "source": "mock"}
+{"ts": "2026-03-01T12:00:50+00:00", "market_id": "demo-btc-above-50000", "token_id": "YES", "yes_bid": 0.444, "yes_ask": 0.456, "bid_size": 414, "ask_size": 82, "source": "mock"}
+{"ts": "2026-03-01T12:00:55+00:00", "market_id": "demo-btc-above-50000", "token_id": "YES", "yes_bid": 0.448, "yes_ask": 0.47, "bid_size": 304, "ask_size": 398, "source": "mock"}

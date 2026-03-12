@@ -1,0 +1,10 @@
+{
+  "run_ts": "2026-03-11T20:30:50.743359+00:00",
+  "next_offset": 35955,
+  "last_page_index": 1438,
+  "last_page_file": "/home/lev/polymarket-research/data/raw/polymarket/metadata/markets_pages/markets_page_01438_offset_00035950.json",
+  "last_page_count": 5,
+  "page_limit": 25,
+  "active": true,
+  "closed": false
+}

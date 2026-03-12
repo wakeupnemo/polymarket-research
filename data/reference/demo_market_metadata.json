@@ -1,0 +1,11 @@
+{
+  "market_id": "demo-btc-above-50000",
+  "slug": "btc-above-50000-demo",
+  "question": "Will BTC be above 50,000 at demo expiry?",
+  "outcomes": [
+    "YES",
+    "NO"
+  ],
+  "category": "crypto",
+  "source": "mock"
+}

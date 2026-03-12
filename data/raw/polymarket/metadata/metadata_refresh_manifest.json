@@ -1,0 +1,14 @@
+{
+  "run_ts": "2026-03-11T20:30:50.743359+00:00",
+  "resume": true,
+  "active": true,
+  "closed": false,
+  "page_limit": 25,
+  "market_count": 35955,
+  "token_count": 71910,
+  "page_file_count": 1439,
+  "markets_csv": "/home/lev/polymarket-research/data/reference/polymarket/markets.csv",
+  "tokens_csv": "/home/lev/polymarket-research/data/reference/polymarket/tokens.csv",
+  "checkpoint_path": "/home/lev/polymarket-research/data/raw/polymarket/metadata/metadata_refresh_checkpoint.json",
+  "manifest_path": "/home/lev/polymarket-research/data/raw/polymarket/metadata/metadata_refresh_manifest.json"
+}

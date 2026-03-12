@@ -1,0 +1,80 @@
+{
+  "freeze_id": "20260311T214230Z__20260312T132929Z",
+  "freeze_ts": "2026-03-12T13:29:29.115855+00:00",
+  "source_run_id": "20260311T214230Z",
+  "policy": {
+    "description": "Feature job input freeze",
+    "allowed_inputs_only": [
+      "latest_books_state_manifest",
+      "books_state_csv",
+      "markets_csv",
+      "tokens_csv"
+    ],
+    "forbidden_for_now": [
+      "websocket inputs",
+      "event enrichment",
+      "simulator assumptions"
+    ]
+  },
+  "source_files": {
+    "latest_books_state_manifest": {
+      "path": "/home/lev/polymarket-research/data/state/polymarket/latest_books_state_manifest.json",
+      "basename": "latest_books_state_manifest.json",
+      "size_bytes": 544,
+      "sha256": "932ccbc8cd1b99328087e4a983f88129028c01b935c617a82bd37817fb6811b7",
+      "row_count": null
+    },
+    "books_state_csv": {
+      "path": "/home/lev/polymarket-research/data/state/polymarket/books_state_20260311T214230Z.csv",
+      "basename": "books_state_20260311T214230Z.csv",
+      "size_bytes": 24572,
+      "sha256": "41cb237168d373522f32f63b97105b01672ce99734245c13dc7efcf07303e480",
+      "row_count": 60
+    },
+    "markets_csv": {
+      "path": "/home/lev/polymarket-research/data/reference/polymarket/markets.csv",
+      "basename": "markets.csv",
+      "size_bytes": 52350187,
+      "sha256": "a6c54344feaeb21775141ab1cc854d036dd4ff833b800064e388f84f0c0af482",
+      "row_count": 35955
+    },
+    "tokens_csv": {
+      "path": "/home/lev/polymarket-research/data/reference/polymarket/tokens.csv",
+      "basename": "tokens.csv",
+      "size_bytes": 9644262,
+      "sha256": "02f58a95cd888e6c553b0bf9d868f125586b347ac42d050466bd7b0d1e8b3fde",
+      "row_count": 71910
+    }
+  },
+  "frozen_files": {
+    "latest_books_state_manifest": {
+      "path": "/home/lev/polymarket-research/data/features/polymarket/input_freezes/freeze_20260311T214230Z__20260312T132929Z/latest_books_state_manifest.json",
+      "basename": "latest_books_state_manifest.json",
+      "size_bytes": 544,
+      "sha256": "932ccbc8cd1b99328087e4a983f88129028c01b935c617a82bd37817fb6811b7",
+      "row_count": null
+    },
+    "books_state_csv": {
+      "path": "/home/lev/polymarket-research/data/features/polymarket/input_freezes/freeze_20260311T214230Z__20260312T132929Z/books_state_20260311T214230Z.csv",
+      "basename": "books_state_20260311T214230Z.csv",
+      "size_bytes": 24572,
+      "sha256": "41cb237168d373522f32f63b97105b01672ce99734245c13dc7efcf07303e480",
+      "row_count": 60
+    },
+    "markets_csv": {
+      "path": "/home/lev/polymarket-research/data/features/polymarket/input_freezes/freeze_20260311T214230Z__20260312T132929Z/markets.csv",
+      "basename": "markets.csv",
+      "size_bytes": 52350187,
+      "sha256": "a6c54344feaeb21775141ab1cc854d036dd4ff833b800064e388f84f0c0af482",
+      "row_count": 35955
+    },
+    "tokens_csv": {
+      "path": "/home/lev/polymarket-research/data/features/polymarket/input_freezes/freeze_20260311T214230Z__20260312T132929Z/tokens.csv",
+      "basename": "tokens.csv",
+      "size_bytes": 9644262,
+      "sha256": "02f58a95cd888e6c553b0bf9d868f125586b347ac42d050466bd7b0d1e8b3fde",
+      "row_count": 71910
+    }
+  },
+  "freeze_dir": "/home/lev/polymarket-research/data/features/polymarket/input_freezes/freeze_20260311T214230Z__20260312T132929Z"
+}

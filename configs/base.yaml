@@ -1,0 +1,53 @@
+project_root: ..
+
+paths:
+  raw: data/raw
+  normalized: data/normalized
+  state: data/state
+  features: data/features
+  reference: data/reference
+  reports: reports
+  logs: logs
+
+smoke:
+  snapshot_count: 12
+  seed: 7
+
+metadata:
+  gamma_base_url: https://gamma-api.polymarket.com
+  active: true
+  closed: false
+  page_limit: 25
+  pause_seconds: 0.50
+  timeout_seconds: 60
+  max_retries: 5
+  resume: true
+
+raw_books:
+  clob_base_url: https://clob.polymarket.com
+  token_limit: 20
+  batch_size: 10
+  iterations: 3
+  poll_interval_seconds: 5
+  timeout_seconds: 30
+  max_retries: 5
+
+state_builder:
+  books_input_manifest: data/raw/polymarket/books/latest_books_manifest.json
+  books_output_dir: data/state/polymarket
+
+feature_input_freeze:
+  latest_state_manifest: data/state/polymarket/latest_books_state_manifest.json
+  markets_csv: data/reference/polymarket/markets.csv
+  tokens_csv: data/reference/polymarket/tokens.csv
+  output_dir: data/features/polymarket/input_freezes
+
+feature_builder:
+  latest_freeze_manifest: data/features/polymarket/input_freezes/latest_feature_input_freeze_manifest.json
+  output_dir: data/features/polymarket/feature_sets
+  feature_set_version: v0_1
+  stale_threshold_ms: 15000
+  quality_score_max_spread: 0.10
+  quality_score_min_top_depth: 100
+  max_repeated_hash_count: 2
+  max_missing_last_trade_count: 2
