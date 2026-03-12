@@ -2,9 +2,10 @@
 
 ## Highlighted Updates
 
-This document has been updated to reflect the now-implemented conservative maker-markout scaffold downstream of the diagnostics + tradability + active-universe layers.
+This document has been updated to reflect a repo-reality check confirming that diagnostics, tradability/active-universe triage, and the first conservative maker-markout scaffold are already implemented.
 
 ### New since the previous version
+- Confirmed via repository inspection that tradability and active-universe artifacts are already implemented in code/test/CLI/script layers (no duplicate implementation required in this step).
 - The dedicated diagnostics interpretation layer is now implemented under reporting as `build_tradability_report.py`.
 - The current implemented chain is now:
   - metadata -> tokens -> raw books -> flat state -> frozen feature inputs -> feature set `v0_1` -> feature diagnostics -> market gating/tradability -> active universe
@@ -16,7 +17,7 @@ This document has been updated to reflect the now-implemented conservative maker
   - latest tradability manifest.
 - Gating thresholds are now explicit and centralized for conservative keep/watch/exclude decisions.
 - The focused tradability test passes (plus diagnostics test slice).
-- The first conservative maker-markout scaffold is now implemented as an experiment/reporting layer (row-level and market-level outputs + latest manifest).
+- The first conservative maker-markout scaffold is implemented as an experiment/reporting layer (row-level and market-level outputs + latest manifest).
 
 ### Outdated assumptions removed
 - The next immediate task is no longer “implement diagnostics interpretation/gating”; that layer now exists.
@@ -552,14 +553,15 @@ The next concrete tasks should now be:
    - keep intentional generated artifacts only,
    - avoid accidental cache/junk files in commits.
 
-2. Use the new gating outputs as first-pass universe control:
-   - review keep/watch/exclude distributions and reasons,
-   - calibrate thresholds only if there is clear evidence from repeated runs.
+2. Interpret and calibrate gating behavior on real runs before broadening scope:
+   - review keep/watch/exclude distributions,
+   - review common exclusion reasons,
+   - adjust thresholds only with explicit evidence.
 
-3. Build the first conservative maker-markout scaffold on top of `active_universe_<feature_set_id>.csv`:
+3. Use keep-only active universe for conservative maker-markout iteration (not simulator expansion):
    - market-level first,
    - simple assumptions first,
-   - no simulator expansion yet.
+   - no queue/fill/fee complexity jump yet.
 
 4. Keep the implementation sequence conservative:
    - no duplicate ingestion work,
