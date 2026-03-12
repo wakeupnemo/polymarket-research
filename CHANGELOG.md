@@ -231,6 +231,118 @@ If `v0.2` is executed correctly, `v0.3` should include:
 
 ---
 
+## v0.3 — Dual feature paths and books-feature sanity diagnostics
+
+### Date
+2026-03-12
+
+### Why v0.3 Exists
+After validating the minimum backbone in v0.2, the project needed a faster iterative feature workflow while preserving the existing freeze-based path.
+
+The goal of v0.3 is to:
+- keep the stable `feature_set_v0_1` chain,
+- add a direct state-to-features path for quicker diagnostics,
+- and make feature runs self-checking with explicit sanity counters.
+
+### What Changed in v0.3
+
+#### New direct books-features builder
+Added a new standalone job:
+- `src/pmre/features/build_books_features.py`
+
+The job now:
+- reads latest books-state manifest,
+- loads the referenced books-state CSV,
+- computes lightweight books-derived features,
+- writes `books_features_<run_id>.csv`,
+- writes `books_features_<run_id>_manifest.json`,
+- updates `latest_books_features_manifest.json`.
+
+#### New execution wiring
+Added:
+- CLI command: `build-books-features`
+- runner: `scripts/run_build_books_features.sh`
+- config block: `books_feature_builder` in `configs/base.yaml`
+
+#### New in-builder sanity diagnostics
+The books-features job now computes and stores:
+- `row_count_in`
+- `row_count_out`
+- `missing_token_id_count`
+- `missing_bid_ask_count`
+- `negative_spread_count`
+- `zero_depth_rows_count`
+- `null_imbalance_count`
+- `null_microprice_count`
+- `null_last_trade_minus_mid_count`
+
+These diagnostics are printed at runtime and persisted in manifests under `sanity_checks`.
+
+#### Test coverage
+Added:
+- `tests/test_build_books_features.py`
+
+The test validates:
+- output artifacts,
+- core computed feature values,
+- staleness behavior,
+- sanity diagnostic counters.
+
+### Important Decisions in v0.3
+
+#### Decision 1 — keep two feature paths in parallel
+The project now supports:
+1. freeze-based stable feature path (`v0_1`),
+2. direct books-features path for fast diagnostics.
+
+This preserves reproducibility while improving iteration speed.
+
+#### Decision 2 — make sanity checks first-class output
+Sanity counters are now treated as required output metadata rather than ad-hoc logs.
+
+This supports:
+- faster triage of bad runs,
+- explicit data-quality visibility,
+- and safer handoff across agents.
+
+### What v0.3 Validates
+Version `0.3` validates that:
+- state-to-feature runs can be executed independently from freeze flow,
+- books-derived diagnostics can be generated and tracked run-by-run,
+- and feature artifacts can include embedded quality signals for downstream research.
+
+### What v0.3 Does Not Yet Validate
+Version `0.3` does **not** validate:
+- final tradability or PnL claims,
+- maker-fill realism beyond current proxies,
+- websocket-first ingestion,
+- incremental full book reconstruction,
+- or cross-market/event-level diagnostics as mandatory dependencies.
+
+### Assumptions Removed or Downgraded in v0.3
+The following assumptions were removed or downgraded:
+- that feature iteration must always go through freeze flow,
+- that feature outputs without explicit sanity counters are acceptable,
+- that diagnostics should live only in separate downstream reporting jobs.
+
+### New Priority After v0.3
+The new immediate priority is:
+1. build diagnostics that can consume both feature manifest types,
+2. produce market-level quality summaries and exclusions,
+3. narrow the active tradable universe,
+4. run the first conservative markout/tradability reports.
+
+### Why This Matters
+v0.3 makes the feature layer more practical for day-to-day research while preserving the conservative frozen path.
+
+The project now has two concrete feature-production modes:
+- reproducible freeze-based feature set,
+- fast direct books-features diagnostics.
+
+This improves both research velocity and operational clarity.
+
+---
+
 ## Changelog Usage Rule
 
 When adding future entries:
