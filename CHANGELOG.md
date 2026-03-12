@@ -343,6 +343,81 @@ This improves both research velocity and operational clarity.
 
 ---
 
+
+## v0.3.1 — Manual feature validation and stale-row confirmation
+### Date
+2026-03-12
+
+### Why v0.3.1 Exists
+After `v0.3` added dual feature paths and embedded sanity diagnostics, the next necessary step was to verify by hand that the core feature formulas matched the builder logic on real output rows and that bad rows were explicitly surfaced rather than silently passing through as clean data.
+
+### What Changed in v0.3.1
+A first manual validation pass was completed against the latest freeze-based feature artifact.
+
+#### Manual spot checks completed
+Performed 10 manual spot checks against sampled feature rows and joined state data.
+
+Verified on the sampled rows:
+- `spread = best_ask_price - best_bid_price`
+- `top_of_book_imbalance = (best_bid_size - best_ask_size) / (best_bid_size + best_ask_size)`
+- `microprice_proxy` moved toward the heavier side of the book
+- `last_trade_minus_mid = last_trade_price - midpoint`
+
+#### Validation outcome
+The manual pass confirmed:
+- spread matched on 10/10 sampled rows
+- imbalance matched on 10/10 sampled rows
+- microprice direction matched on 10/10 sampled rows
+- `last_trade_minus_mid` sign and value matched on 10/10 sampled rows
+
+#### Stale-row handling confirmed
+The sampled bad rows were not silently accepted:
+- rows identified as stale were emitted with `staleness_flag = 1`
+- sampled stale rows showed blank raw emitted book/trade fields rather than being treated as clean rows
+
+#### Evidence artifacts
+The manual validation pass produced local evidence files under:
+- `reports/manual_checks/manual_spot_check_10.tsv`
+- `reports/manual_checks/manual_spot_check_10_audit.tsv`
+- `reports/manual_checks/STEP5_VERDICT.md`
+
+### Important Decisions in v0.3.1
+#### Decision 1 — require at least one manual validation pass after feature-builder changes
+Passing tests and successful artifact generation are not sufficient by themselves. Core feature formulas should also be checked directly on real sampled rows before downstream research relies on them.
+
+#### Decision 2 — treat stale-row surfacing as part of feature correctness
+Feature correctness is not only about numeric formulas. It also includes making sure bad rows are visibly flagged rather than silently blending into clean research inputs.
+
+### What v0.3.1 Validates
+Version `0.3.1` validates that:
+- the freeze-based feature builder is numerically consistent on the sampled rows,
+- microstructure-derived fields match the intended formulas in live artifacts,
+- and stale rows are surfaced explicitly through `staleness_flag`.
+
+### What v0.3.1 Does Not Yet Validate
+Version `0.3.1` does **not** validate:
+- that repeated-hash stale behavior was triggered in the current sample,
+- that missing-last-trade streak stale behavior was triggered in the current sample,
+- market-level exclusion rules,
+- tradability or PnL claims,
+- or any positive-EV strategy result.
+
+### Assumptions Removed or Downgraded in v0.3.1
+The following assumptions were removed or downgraded:
+- that feature outputs could be trusted without a manual spot-check pass,
+- that stale-row handling was already sufficiently evidenced by builder logic alone,
+- that current diagnostics were enough without row-level validation evidence.
+
+### New Priority After v0.3.1
+The new immediate priority is:
+1. add a deterministic diagnostics/report step that summarizes feature quality at the market level,
+2. make stale reasons more explicit by category where useful,
+3. narrow the active research universe using quality and tradability filters,
+4. proceed to first conservative markout and tradability reporting.
+
+### Why This Matters
+`v0.3.1` is the point where the feature layer is not only implemented, but manually sanity-checked on real output. This reduces the risk of building downstream diagnostics, exclusions, and markout studies on top of silently broken feature logic.
+
 ## Changelog Usage Rule
 
 When adding future entries:
