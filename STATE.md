@@ -2,28 +2,75 @@
 
 ## Highlighted Updates
 
-This document has been updated to reflect a repo-reality check confirming that diagnostics, tradability/active-universe triage, and the first conservative maker-markout scaffold are already implemented.
+This document has been updated to reflect the current Debian validation pass through calibrated tradability and the first successful maker-markout scaffold run, followed by a server-side repo/runtime hygiene pass that preserved the calibrated runtime truth outside the repo tree.
 
 ### New since the previous version
-- Confirmed via repository inspection that tradability and active-universe artifacts are already implemented in code/test/CLI/script layers (no duplicate implementation required in this step).
-- The dedicated diagnostics interpretation layer is now implemented under reporting as `build_tradability_report.py`.
-- The current implemented chain is now:
-  - metadata -> tokens -> raw books -> flat state -> frozen feature inputs -> feature set `v0_1` -> feature diagnostics -> market gating/tradability -> active universe
-- The new tradability layer is callable from the CLI (`build-tradability-report`) and from a shell runner.
-- The tradability layer now writes:
-  - tradability JSON report,
-  - tradability market-summary CSV with gating columns,
-  - active-universe CSV (keep-only markets),
-  - latest tradability manifest.
-- Gating thresholds are now explicit and centralized for conservative keep/watch/exclude decisions.
-- The focused tradability test passes (plus diagnostics test slice).
-- The first conservative maker-markout scaffold is implemented as an experiment/reporting layer (row-level and market-level outputs + latest manifest).
+- Ran a slightly longer bounded polling sample by increasing raw-books iterations from `3` to `6` while keeping the same bounded token subset and polling cadence.
+- Validated refreshed downstream artifacts on that bounded sample:
+  - raw books manifest with `jsonl_line_count = 12`,
+  - books-state manifest with `row_count = 120`,
+  - refreshed feature-input freeze,
+  - refreshed stable feature set `v0_1` with `row_count = 120`,
+  - refreshed diagnostics outputs.
+- Validated tradability on the longer bounded sample under default thresholds:
+  - total markets = `10`,
+  - `keep = 0`,
+  - `watch = 4`,
+  - `exclude = 6`,
+  - active universe size = `0`.
+- Confirmed that the previous hard blocker `row_count_too_low` no longer dominated after the longer sample; the gating result moved into a near-miss calibration regime centered on `row_count_watch` plus repeated-hash constraints.
+- Inspected the four watch markets directly and confirmed they were blocked only by `row_count_watch|repeated_hash_watch` with otherwise tight spreads and acceptable quality scores.
+- Confirmed that tradability threshold overrides are read from `tradability_report.thresholds`, not from flat keys under `tradability_report`.
+- Validated a conservative local calibration override with:
+  - `min_row_count_keep = 12`,
+  - `max_repeated_hash_fraction_keep = 0.5`.
+- Validated calibrated tradability outputs on real local artifacts:
+  - total markets = `10`,
+  - `keep = 4`,
+  - `watch = 0`,
+  - `exclude = 6`,
+  - active universe size = `4`.
+- Confirmed the calibrated keep set:
+  - `540818`,
+  - `540819`,
+  - `540844`,
+  - `540881`.
+- Confirmed that the local checkout was previously behind `origin/main` and missing the maker-markout scaffold even though it already existed upstream.
+- Synced local `main` to `origin/main`, validated local presence of the maker-markout scaffold, and confirmed:
+  - `src/pmre/experiments/build_maker_markout_report.py`,
+  - CLI wiring `build-maker-markout`,
+  - `scripts/run_build_maker_markout.sh`,
+  - `tests/test_build_maker_markout.py`.
+- Successfully ran the conservative maker-markout scaffold on the calibrated active universe.
+- Produced maker-markout outputs:
+  - latest maker-markout manifest,
+  - report JSON,
+  - per-row CSV,
+  - per-market summary CSV.
+- Current maker-markout scaffold result on the calibrated active universe:
+  - selected rows = `44`,
+  - stale rows dropped = `4`,
+  - market summary rows = `4`,
+  - row-step horizons = `[1, 2, 5]`,
+  - all four market summaries show positive populated mean buy/sell markouts and zero adverse fractions under the scaffold assumptions.
+- Completed a repo/runtime hygiene pass on the Debian checkout:
+  - backed up the calibrated runtime artifacts and local calibration config outside the repo tree under `~/pmre_runtime_snapshots/20260313T102233Z/`,
+  - moved local-only configs out of `configs/` into `~/pmre_local_configs/`,
+  - removed generated runtime artifacts and cache junk from the working tree,
+  - and cleared diagnostics-manifest conflict residue.
+- Current local repo state after cleanup:
+  - no untracked generated artifacts remain,
+  - no unmerged entries remain,
+  - remaining intentional repo dirt is limited to staged updates of:
+    - `data/features/polymarket/feature_sets/latest_feature_set_manifest.json`,
+    - `data/features/polymarket/input_freezes/latest_feature_input_freeze_manifest.json`.
 
 ### Outdated assumptions removed
-- The next immediate task is no longer “implement diagnostics interpretation/gating”; that layer now exists.
-- The current repo still does not need more ingestion scaffolding, more feature-builder scaffolding, or a new smoke experiment for this step.
-- The next step should not be framed as adding another diagnostics layer; it is now using the new active universe for tradability narrowing and first conservative maker-markout scaffolding.
-- Gating/tradability outputs are still first-pass triage artifacts, not alpha or production execution rules.
+- The active universe is no longer empty under the currently validated calibrated thresholds.
+- The maker-markout scaffold is no longer merely assumed upstream; it is now present locally, CLI-wired, and has been run successfully on the Debian server.
+- The immediate blocker is no longer “obtain any non-empty keep set before markout.” That hurdle has been cleared.
+- The current calibrated tradability result should not be described as the default-threshold outcome; the non-empty active universe depends on an explicit local tradability override.
+- The calibrated runtime truth does not need to remain in a dirty repo tree; it has now been preserved outside the checkout and should remain clearly separated from tracked default config unless intentionally promoted.
 
 ---
 
@@ -41,9 +88,7 @@ The goal is not to rush into a bot or accumulate loosely related ideas. The goal
 
 ## Current Phase
 
-**Phase 1 — minimum data backbone plus stable feature set, diagnostics, tradability gating, and first conservative maker-markout scaffold implemented**
-
-The project has moved beyond pure data plumbing and beyond the first reproducible feature stage.
+**Phase 1 — minimum data backbone plus stable feature set, diagnostics, tradability gating, and first conservative maker-markout scaffold validated; calibration and interpretation remain explicit**
 
 Current reality:
 - metadata universe refresh works,
@@ -53,10 +98,14 @@ Current reality:
 - the feature-job input set is frozen explicitly,
 - a first stable feature set `v0_1` has been built successfully from those frozen inputs,
 - a diagnostics layer on top of the stable feature set exists and runs successfully,
-- a downstream tradability/gating layer now converts diagnostics into keep/watch/exclude plus active-universe outputs,
-- and the maker-markout scaffold now produces first-pass adverse-selection diagnostics for active-universe triage.
+- a downstream tradability / gating layer converts diagnostics into keep/watch/exclude plus active-universe outputs,
+- a slightly longer bounded sample materially improved row count from `60` to `120`,
+- default tradability thresholds on that longer sample still produced `keep = 0`, `watch = 4`, `exclude = 6`,
+- an explicit conservative local calibration override produced a non-empty keep-only active universe of size `4`,
+- the conservative maker-markout scaffold has now been run successfully on that calibrated active universe,
+- and a cleanup pass has preserved the validated calibrated runtime artifacts outside the repo tree while reducing the checkout to a near-clean state.
 
-This is still an early research-stage system, but it is no longer just a design document set, it is no longer only an ingestion/state project, and it is no longer waiting on its first reporting layer.
+This remains an early research-stage system. The current maker-markout result is still a triage scaffold under explicit simplifying assumptions, but the project is no longer blocked before its first markout experiment.
 
 ---
 
@@ -202,18 +251,11 @@ Current market-summary outputs include:
 - `median_market_quality_score`
 
 Current live implementation result:
-- the latest successful diagnostics run processed `60` rows from the current stable feature set,
-- found `26` stale rows,
-- found stale-row fraction `0.43333333333333335`,
-- found `0` missing-spread rows,
-- found `0` non-positive-spread rows,
-- found `0` wide-spread rows at threshold `0.1`,
-- found `0` zero/empty top-size rows,
-- found `0` null imbalance rows,
-- found `0` null microprice rows,
-- found `26` repeated-hash rows,
-- and produced mean / median market-quality values without error.
-
+- the latest successful diagnostics run on the longer bounded sample processed `120` rows from the current stable feature set,
+- refreshed the diagnostics JSON summary,
+- refreshed the diagnostics market-summary CSV,
+- refreshed the latest diagnostics manifest,
+- and provided the market-level inputs used by the calibrated tradability pass without error.
 
 #### 7. Tradability / gating layer
 Implemented and working:
@@ -223,24 +265,57 @@ Implemented and working:
 - writes a tradability market-summary CSV with gating columns,
 - writes keep-only `active_universe_<feature_set_id>.csv`,
 - writes tradability JSON report + latest tradability manifest,
-- exposed through CLI `build-tradability-report`,
-- callable via `scripts/run_build_tradability_report.sh`.
+- is exposed through CLI `build-tradability-report`,
+- and is callable via `scripts/run_build_tradability_report.sh`.
 
-Current implementation note:
-- this remains a reporting/triage layer and does not mutate diagnostics or stable feature-set artifacts.
+Current implementation notes:
+- this remains a reporting / triage layer and does not mutate diagnostics or stable feature-set artifacts.
+- threshold overrides are currently read from `tradability_report.thresholds`.
+
+Current local validation result:
+- tradability runs successfully on the current local artifacts,
+- the longer bounded sample increased feature-set row count from `60` to `120`,
+- default thresholds on that longer sample produced:
+  - total markets = `10`,
+  - `keep = 0`,
+  - `watch = 4`,
+  - `exclude = 6`,
+  - active-universe size = `0`,
+- the near-miss watch set was driven by `row_count_watch|repeated_hash_watch`,
+- an explicit local calibration override with `min_row_count_keep = 12` and `max_repeated_hash_fraction_keep = 0.5` produced:
+  - total markets = `10`,
+  - `keep = 4`,
+  - `watch = 0`,
+  - `exclude = 6`,
+  - active-universe size = `4`,
+- and the current non-empty active universe should therefore be treated as validated under calibrated thresholds, not under untouched base defaults.
 
 #### 8. Conservative maker-markout scaffold
-Implemented and working:
-- consumes latest tradability manifest + active-universe CSV + latest feature-set manifest + stable feature CSV,
-- applies explicit candidate-row selection (active universe only, valid IDs, spread > 0, non-stale, minimum quality),
-- computes row-step forward midpoint markouts for passive buy/sell quote diagnostics,
-- writes row-level markout CSV + market-summary CSV,
-- writes experiment JSON + latest maker-markout manifest,
-- exposed through CLI `build-maker-markout`,
-- callable via `scripts/run_build_maker_markout.sh`.
+Implemented and locally validated.
 
-Current implementation note:
-- this is explicitly a conservative triage scaffold (not execution PnL, no queue/fill/fee model).
+Implemented and working:
+- `src/pmre/experiments/build_maker_markout_report.py` exists in the synced local checkout,
+- the CLI exposes `build-maker-markout`,
+- `scripts/run_build_maker_markout.sh` runs the scaffold,
+- `tests/test_build_maker_markout.py` exists upstream and is present locally,
+- the scaffold consumes the latest tradability manifest + active-universe CSV + latest feature-set manifest,
+- writes a maker-markout report JSON,
+- writes per-row markout CSV output,
+- writes per-market summary CSV output,
+- and writes a latest maker-markout manifest.
+
+Current implementation notes:
+- this is explicitly a conservative triage scaffold,
+- not execution PnL,
+- and it does not model queue position, fees, fill probability, or passive execution mechanics.
+
+Current local validation result:
+- the maker-markout scaffold ran successfully on the Debian server,
+- it consumed the calibrated keep-only active universe of `4` markets,
+- it selected `44` rows after dropping `72` rows not in the active universe and `4` stale rows,
+- it produced `4` market summaries,
+- it used row-step horizons `[1, 2, 5]`,
+- and the current summary outputs show positive populated mean buy/sell markouts with zero adverse fractions under the scaffold assumptions.
 
 ---
 
@@ -279,6 +354,7 @@ The current repo should be understood approximately as:
     - `build_feature_diagnostics.py`
     - `build_tradability_report.py`
   - `experiments/`
+    - `maker_markout_smoke.py`
     - `build_maker_markout_report.py`
 - `tests/`
   - metadata refresh test
@@ -288,13 +364,14 @@ The current repo should be understood approximately as:
   - feature set `v0_1` test
   - feature diagnostics test
   - tradability report test
-  - maker markout report test
+  - maker-markout scaffold test
   - smoke test
 - `data/`
   - `raw/`
   - `reference/`
   - `state/`
   - `features/`
+  - `experiments/`
 
 This structure is now real and should be preserved unless there is a strong reason to change it.
 
@@ -537,11 +614,77 @@ Stored under:
 
 Contains keep-only markets for the next maker-markout step.
 
+Current local validation result:
+- the file is being written correctly,
+- the default-threshold longer-sample run still produced a header-only CSV,
+- but the latest calibrated local validation run produced `4` keep markets:
+  - `540818`,
+  - `540819`,
+  - `540844`,
+  - `540881`.
+
 #### Latest tradability manifest
 Stored under:
 - `data/features/polymarket/universe/latest_tradability_manifest.json`
 
 Defines the latest tradability run and pointers to tradability outputs.
+
+Current local note:
+- the latest calibrated tradability manifest and outputs were validated locally,
+- used as input for the first maker-markout scaffold pass,
+- and then backed up outside the repo tree during hygiene cleanup because the calibrated thresholds remain experimental.
+
+### Maker-markout experiment layer
+
+#### Maker-markout report JSON
+Stored under:
+- `data/experiments/polymarket/maker_markout/maker_markout_<feature_set_id>.json`
+
+Contains:
+- run metadata,
+- input manifest paths,
+- horizon configuration,
+- selection counts,
+- explicit scaffold assumptions,
+- and output paths.
+
+#### Maker-markout rows CSV
+Stored under:
+- `data/experiments/polymarket/maker_markout/maker_markout_<feature_set_id>_rows.csv`
+
+Contains row-level snapshot-based markout fields including:
+- buy/sell quote prices,
+- future mids at configured horizons,
+- buy/sell markouts,
+- market quality score,
+- spread,
+- midpoint,
+- top-of-book sizes,
+- market and token identifiers.
+
+#### Maker-markout market-summary CSV
+Stored under:
+- `data/experiments/polymarket/maker_markout/maker_markout_<feature_set_id>_market_summary.csv`
+
+Contains per-market rollups including:
+- `row_count`,
+- `mean_spread`,
+- `mean_market_quality_score`,
+- mean buy/sell markouts by horizon,
+- adverse buy/sell markout fractions.
+
+#### Latest maker-markout manifest
+Stored under:
+- `data/experiments/polymarket/maker_markout/latest_maker_markout_manifest.json`
+
+Defines the latest maker-markout scaffold run and pointers to its outputs.
+
+Current local validation result:
+- the latest maker-markout run selected `44` rows,
+- covered `4` markets,
+- used row-step horizons `[1, 2, 5]`,
+- produced populated market summaries for all `4` calibrated keep markets,
+- and those runtime outputs were backed up outside the repo tree during hygiene cleanup rather than left as accidental tracked state.
 
 ---
 
@@ -549,25 +692,32 @@ Defines the latest tradability run and pointers to tradability outputs.
 
 The next concrete tasks should now be:
 
-1. Confirm artifact hygiene decisions for diagnostics + tradability outputs:
-   - keep intentional generated artifacts only,
-   - avoid accidental cache/junk files in commits.
+1. Update tracked project context to reflect the current runtime truth and cleanup result:
+   - longer bounded sample validated,
+   - calibrated non-empty active universe validated,
+   - maker-markout scaffold present locally and run successfully,
+   - repo/runtime hygiene pass completed,
+   - and the remaining staged manifest-pointer changes called out explicitly.
 
-2. Interpret and calibrate gating behavior on real runs before broadening scope:
-   - review keep/watch/exclude distributions,
-   - review common exclusion reasons,
-   - adjust thresholds only with explicit evidence.
+2. Resolve the remaining staged latest-manifest updates deliberately:
+   - `data/features/polymarket/input_freezes/latest_feature_input_freeze_manifest.json`,
+   - `data/features/polymarket/feature_sets/latest_feature_set_manifest.json`,
+   - either restore them to tracked default truth or commit them intentionally together with the matching documentation.
 
-3. Use keep-only active universe for conservative maker-markout iteration (not simulator expansion):
-   - market-level first,
-   - simple assumptions first,
-   - no queue/fill/fee complexity jump yet.
+3. Interpret the first maker-markout scaffold outputs conservatively:
+   - per-market mean buy/sell markouts,
+   - adverse fractions,
+   - missing horizon coverage for some markets,
+   - and the extent to which the current positive symmetric markouts may be scaffold artifacts versus useful triage signal.
 
-4. Keep the implementation sequence conservative:
+4. Keep the calibrated tradability thresholds as an experimental local override unless there is a deliberate decision to promote them into a tracked config path.
+
+5. Keep the implementation sequence conservative:
    - no duplicate ingestion work,
    - no duplicate feature-builder scaffolding,
    - no extra diagnostics layer duplication,
-   - no websocket/event enrichment in this immediate step.
+   - no websocket / event enrichment in this immediate step,
+   - and no further server/runtime work unless the remaining manifest pointers prove inconsistent with the documented runtime truth.
 
 ---
 
@@ -595,18 +745,16 @@ At the current stage, the following should be treated as validated.
 - The diagnostics layer exists in the repo and is wired into the CLI.
 - The diagnostics shell runner exists and runs successfully.
 - The diagnostics job successfully consumes the latest stable feature-set manifest and writes all expected outputs.
-- The tradability/gating layer exists in the repo and is wired into the CLI.
+- The tradability / gating layer exists locally and runs successfully on the Debian server.
 - The tradability shell runner exists.
 - The tradability job consumes diagnostics + feature-set manifests and writes tradability summary + active-universe outputs.
-- The diagnostics test passes.
-- The focused tradability + diagnostics test subset passes.
-- The broader feature/smoke test slice passes.
-- GitHub `main` already contains the diagnostics implementation and the local Debian checkout matched the targeted diagnostics files without extra patching.
-- The GitHub repository is now initialized, connected, and pushed successfully.
-- The practical workflow now supports:
-  - GitHub for code truth,
-  - ChatGPT Project files for persistent context,
-  - and multiple coding chats without relying on local server copies of context files.
+- The longer bounded polling sample and full downstream rebuild succeed on the Debian server.
+- The current default-threshold tradability output is structurally correct even when the active universe is empty.
+- The local synced checkout now contains the upstream maker-markout scaffold.
+- The maker-markout shell runner exists.
+- The maker-markout CLI wiring exists.
+- The maker-markout scaffold successfully consumes the current latest tradability + feature-set artifacts and writes all expected maker-markout outputs.
+- The repo/runtime hygiene pass successfully preserved the calibrated runtime artifacts outside the repo tree while removing generated artifacts, cache junk, and local-only configs from the checkout.
 
 ### Data-contract validation
 - `market_id` is usable in the current backbone.
@@ -615,67 +763,62 @@ At the current stage, the following should be treated as validated.
 - `outcome` to `token_id` mapping is usable in the current backbone.
 - The current state artifact is sufficient to support a first stable diagnostic feature layer.
 - The current stable feature artifact is sufficient to support a first diagnostics reporting layer.
-- Diagnostics outputs are sufficient to drive a first explicit keep/watch/exclude market gating layer and keep-only active universe artifact.
+- Diagnostics outputs are sufficient to drive a first explicit keep/watch/exclude market gating layer and keep-only active-universe artifact.
+- The longer bounded sample is sufficient to move the gating result from hard row-count exclusion into a near-miss calibration regime.
+- The current calibrated threshold override is sufficient to produce a non-empty keep-only active universe.
+- The current active-universe artifact is sufficient input for the conservative maker-markout scaffold.
 
 ### Process validation
-The project has a clear operating mode:
-- smallest meaningful next step,
-- conservative implementation first,
-- simple baselines before complexity,
-- explicit labeling of validated vs speculative,
-- and written go / no-go decisions.
-
-The feature job now also has an explicit reproducibility rule:
-- only the frozen approved inputs are allowed,
-- and feature logic should remain narrower than downstream simulation or execution logic.
-
-The workflow now also has an explicit source-of-truth rule:
-- GitHub is the source of truth for code,
-- ChatGPT Project files are persistent context,
-- and server-side scripts should not depend on those context files existing locally.
-
-The current diagnostics+gating step now has an explicit implementation rule:
-- use diagnostics as immutable input and build gating as a downstream reporting layer,
-- without re-adding ingestion layers, feature-builder scaffolding, duplicate diagnostics layers, or duplicate smoke logic.
+- Inspecting local repo reality before changing code is the correct operating rule.
+- GitHub remains the source of truth for code.
+- Local server artifacts are the runtime truth for validation.
+- Project context files are useful for continuity, but local server flow should not depend on them existing in the checkout.
+- Repo hygiene must be handled before rebasing a dirty local branch.
+- Experimental runtime artifacts should be backed up outside the repo tree before cleanup rather than left as ambiguous tracked state.
+- Experimental local configs should remain outside tracked `configs/` unless intentionally promoted.
 
 ---
 
 ## What Is Not Yet Validated
 
-The following remain important and unvalidated.
+The following are still not validated.
 
 ### Event linkage
-- whether `event_id` can be reliably recovered and maintained in the canonical backbone,
-- whether an `events.csv` table should be built now or deferred,
-- whether event-level joins are stable enough to rely on for research segmentation.
+- whether event-level enrichment is necessary for the next useful research delta,
+- whether event grouping changes the first-pass microstructure conclusions materially.
 
 ### Market-state truth beyond top of book
-- whether polling-based snapshots are sufficient for the first markout studies,
-- whether websocket data is required for the next integrity jump,
-- whether book updates between polls create too much hidden state loss,
-- whether orderbook reconciliation against incremental updates can be made trustworthy.
+- whether top-of-book-only state is sufficient for the first maker / toxicity studies,
+- whether deeper ladder reconstruction is needed before markout work becomes meaningful.
 
 ### Execution realism
-- whether conservative maker fill modeling is good enough for early research,
-- whether a first taker simulator will produce realistic effective prices,
-- whether partial fills, queue approximations, and fee handling will be honest enough.
+- queue position,
+- passive fill probability,
+- cancellation timing,
+- fees / rebates,
+- realized maker PnL under realistic assumptions.
 
 ### Signal validity
-- whether any maker regime has positive expected value after realistic fill and toxicity assumptions,
-- whether any crypto fair-value residual survives spread and fees,
-- whether any stale-anchor effect is both real and tradable rather than merely observable.
+- whether any current microstructure feature family produces genuine edge,
+- whether any tradability ranking survives beyond triage usefulness.
 
 ### Operational robustness
-- whether the current polling collector can run stably for longer collection windows,
-- whether schema drift or payload shape changes will create silent failure modes,
-- whether the initial token subset should be expanded or narrowed for research.
+- robustness of the bounded polling collector across longer runs,
+- how stable diagnostics / gating outputs remain over larger samples and more markets.
 
 ### Diagnostic + gating sufficiency of the first reporting layer
-- whether the current stale / repeated-hash patterns are informative enough to keep current gating classes stable over time,
-- whether the spread/quality/row-count thresholds are calibrated well enough for conservative universe narrowing,
-- whether current gating reasons are compact and interpretable enough for operational triage,
+- whether the current calibrated thresholds generalize beyond this single bounded sample,
+- whether spread / quality / row-count / repeated-hash thresholds are calibrated well enough for conservative universe narrowing,
+- whether current gating reasons remain compact and interpretable over additional runs,
 - whether the simple tradability score is adequate for first-pass ranking,
-- and whether the next useful delta after this should be threshold calibration or maker-markout iteration.
+- whether the calibrated keep set persists under a slightly larger sample or under tracked config rather than a local override,
+- and whether further threshold work should remain limited to calibration rather than architecture changes.
+
+### Maker-markout readiness
+- whether the current positive symmetric snapshot-based markouts are informative beyond scaffold sanity checking,
+- whether missing `h5` coverage for some markets materially limits interpretation,
+- whether the current zero adverse fractions are robust or mostly a consequence of the scaffold assumptions,
+- and how much of the present result survives once more realistic execution assumptions are introduced.
 
 ---
 
