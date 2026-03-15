@@ -1,61 +1,74 @@
 # Developing Context
 
 ## Current Development Focus
-- Current focus is a repo-side interpretation / policy pass, not a new implementation sprint.
+- Current focus is a small server-side reproducibility / runtime-truth pass, not new implementation.
 - Current focus is:
-  - preserving validated runtime truth in tracked docs,
-  - recording the first maker-markout scaffold interpretation conservatively,
-  - and closing latest-manifest pointer policy deliberately.
-- Treat the current maker-markout output as scaffold-level triage under explicit simplifying assumptions, not execution PnL.
+  - separating preserved longer-sample runtime truth from current tracked-latest checkout truth,
+  - keeping latest-pointer truth coherent,
+  - identifying the exact prerequisite blocking tradability reruns on the live checkout,
+  - and avoiding any architecture or scope expansion.
 
-## Decisions Captured In This Pass
-- Longer bounded sample validation remains the current runtime basis:
-  - books-state row count = `120`,
-  - stable feature-set row count = `120`.
-- Default tradability thresholds on that sample produced:
-  - total markets = `10`,
-  - `keep = 0`,
-  - `watch = 4`,
-  - `exclude = 6`.
-- Experimental local calibration override (`min_row_count_keep = 12`, `max_repeated_hash_fraction_keep = 0.5`) produced:
-  - total markets = `10`,
-  - `keep = 4`,
-  - `watch = 0`,
-  - `exclude = 6`.
-- Calibrated keep set:
-  - `540818`,
-  - `540819`,
-  - `540844`,
-  - `540881`.
-- First conservative maker-markout scaffold run on calibrated active universe produced:
-  - `selected_rows = 44`,
-  - `market_summary_rows = 4`,
-  - row-step horizons `[1, 2, 5]`.
-- Repo/runtime hygiene remains complete:
-  - calibrated runtime artifacts + local calibration config preserved outside repo tree,
-  - local-only configs removed from tracked `configs/`,
-  - generated runtime artifacts and cache junk removed from checkout.
-- Latest-manifest pointer policy was resolved:
-  - keep `data/features/polymarket/input_freezes/latest_feature_input_freeze_manifest.json`,
-  - keep `data/features/polymarket/feature_sets/latest_feature_set_manifest.json`,
-  - because both still point to intentionally present tracked artifacts under `data/features/polymarket/...`.
+## Decisions Made In This Chat
+- Do not add new ingestion, new features, new diagnostics logic, websocket work, event enrichment, crypto fair-value work, stale-anchor work, or simulator expansion in this step.
+- Inspect live repo/runtime reality first.
+- Restore latest freeze / feature-set pointers if they point to missing artifacts.
+- The current live checkout now has coherent latest pointers again:
+  - latest freeze pointer resolves,
+  - latest feature-set pointer resolves.
+- The restored tracked latest basis is the older coherent 60-row sample:
+  - books-state row count = `60`
+  - feature-set row count = `60`
+- The preserved runtime snapshot under `~/pmre_runtime_snapshots/20260313T102233Z/` contains the memo-basis longer-sample truth:
+  - local calibration file,
+  - diagnostics manifest,
+  - calibrated tradability outputs,
+  - active-universe CSV,
+  - maker-markout outputs.
+- The preserved calibrated runtime note matches:
+  - keep IDs `540818`, `540819`, `540844`, `540881`
+  - `selected_rows = 44`
+  - `market_summary_rows = 4`
+  - horizons `[1, 2, 5]`
+- Current live tradability reruns fail because:
+  - `data/features/polymarket/diagnostics/latest_feature_diagnostics_manifest.json`
+  is missing.
+- Current live maker-markout reruns fail downstream because tradability did not produce fresh outputs.
+- Therefore the current result is not “drift in tradability counts”; it is “missing diagnostics prerequisite on the live checkout.”
+
+## Current Coding Task
+- No new coding task.
+- Current task is runtime verification only:
+  - keep tracked latest pointers coherent,
+  - verify which runtime basis is actually active,
+  - verify preserved snapshot contents,
+  - and identify the smallest blocker preventing rerun on the current checkout.
 
 ## Current Runtime Reality
-- Default-threshold tradability remains empty-keep (`keep = 0`, `watch = 4`, `exclude = 6`).
-- Non-empty active universe currently depends on experimental local calibration, not default tracked config.
-- Current maker-markout scaffold assumptions remain:
-  - no queue modeling,
-  - no fee modeling,
-  - no fill-probability modeling,
-  - quote prices approximated from midpoint ± spread / 2.
-- Current market summaries are useful for triage only; missing `h5` for two markets limits interpretation.
+- `HEAD` is `8980f88` on `main`.
+- Current tracked latest freeze / feature-set pair is coherent and points to the older 60-row basis.
+- Current tracked latest diagnostics latest-manifest is missing.
+- Current tracked latest tradability rerun is blocked.
+- Current tracked latest maker-markout rerun is blocked.
+- Preserved longer-sample runtime truth exists outside the repo tree under:
+  - `~/pmre_runtime_snapshots/20260313T102233Z/`
+- Preserved memo-basis calibrated facts remain:
+  - default longer-sample split = `keep 0 / watch 4 / exclude 6`
+  - calibrated longer-sample split = `keep 4 / watch 0 / exclude 6`
+  - calibrated keep IDs = `540818`, `540819`, `540844`, `540881`
 
 ## Implementation Constraints / Assumptions
-- Smallest meaningful next step only.
-- Do not duplicate already implemented ingestion, feature, diagnostics, tradability, or maker-markout scaffolding.
+- Smallest meaningful step only.
+- Do not change Python code, tests, CLI wiring, or tracked configs unless a real path inconsistency forces it.
 - Keep maker and taker logic separate.
-- Keep descriptive/reporting interpretation separate from the stable feature schema.
-- Keep calibrated thresholds labeled experimental unless deliberately promoted later.
+- Keep scaffold interpretation conservative.
+- Keep preserved snapshot truth separate from tracked-latest truth.
+- Do not promote calibrated thresholds into tracked baseline config in this phase.
+- Do not overread positive maker-markout scaffold output as execution evidence.
 
-## Immediate Next Step
-1. Run a small bounded server-side verification pass that reproduces the documented default-vs-calibrated split and confirms the same calibrated keep IDs before any further interpretation updates.
+## Immediate Next Steps
+1. Restore or regenerate diagnostics latest-manifest truth for the live checkout.
+2. Only after diagnostics exists again, rerun tradability on the current tracked latest checkout.
+3. Only after calibrated tradability reproduces, rerun maker-markout once.
+4. Keep any update to docs or tracked state explicit about the distinction between:
+   - preserved 120-row runtime truth,
+   - and current tracked 60-row checkout truth.
