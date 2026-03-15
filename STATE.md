@@ -2,75 +2,58 @@
 
 ## Highlighted Updates
 
-This document has been updated to reflect the current Debian validation pass through calibrated tradability and the first successful maker-markout scaffold run, followed by a server-side repo/runtime hygiene pass that preserved the calibrated runtime truth outside the repo tree.
+This document has been updated to reflect the server-side reproducibility inspection after the maker-markout interpretation memo pass.
 
 ### New since the previous version
-- Ran a slightly longer bounded polling sample by increasing raw-books iterations from `3` to `6` while keeping the same bounded token subset and polling cadence.
-- Validated refreshed downstream artifacts on that bounded sample:
-  - raw books manifest with `jsonl_line_count = 12`,
-  - books-state manifest with `row_count = 120`,
-  - refreshed feature-input freeze,
-  - refreshed stable feature set `v0_1` with `row_count = 120`,
-  - refreshed diagnostics outputs.
-- Validated tradability on the longer bounded sample under default thresholds:
-  - total markets = `10`,
-  - `keep = 0`,
-  - `watch = 4`,
-  - `exclude = 6`,
-  - active universe size = `0`.
-- Confirmed that the previous hard blocker `row_count_too_low` no longer dominated after the longer sample; the gating result moved into a near-miss calibration regime centered on `row_count_watch` plus repeated-hash constraints.
-- Inspected the four watch markets directly and confirmed they were blocked only by `row_count_watch|repeated_hash_watch` with otherwise tight spreads and acceptable quality scores.
-- Confirmed that tradability threshold overrides are read from `tradability_report.thresholds`, not from flat keys under `tradability_report`.
-- Validated a conservative local calibration override with:
-  - `min_row_count_keep = 12`,
-  - `max_repeated_hash_fraction_keep = 0.5`.
-- Validated calibrated tradability outputs on real local artifacts:
-  - total markets = `10`,
-  - `keep = 4`,
-  - `watch = 0`,
-  - `exclude = 6`,
-  - active universe size = `4`.
-- Confirmed the calibrated keep set:
-  - `540818`,
-  - `540819`,
-  - `540844`,
-  - `540881`.
-- Confirmed that the local checkout was previously behind `origin/main` and missing the maker-markout scaffold even though it already existed upstream.
-- Synced local `main` to `origin/main`, validated local presence of the maker-markout scaffold, and confirmed:
-  - `src/pmre/experiments/build_maker_markout_report.py`,
-  - CLI wiring `build-maker-markout`,
-  - `scripts/run_build_maker_markout.sh`,
-  - `tests/test_build_maker_markout.py`.
-- Successfully ran the conservative maker-markout scaffold on the calibrated active universe.
-- Produced maker-markout outputs:
-  - latest maker-markout manifest,
-  - report JSON,
-  - per-row CSV,
-  - per-market summary CSV.
-- Current maker-markout scaffold result on the calibrated active universe:
-  - selected rows = `44`,
-  - stale rows dropped = `4`,
-  - market summary rows = `4`,
-  - row-step horizons = `[1, 2, 5]`,
-  - all four market summaries show positive populated mean buy/sell markouts and zero adverse fractions under the scaffold assumptions.
-- Completed a repo/runtime hygiene pass on the Debian checkout:
-  - backed up the calibrated runtime artifacts and local calibration config outside the repo tree under `~/pmre_runtime_snapshots/20260313T102233Z/`,
-  - moved local-only configs out of `configs/` into `~/pmre_local_configs/`,
-  - removed generated runtime artifacts and cache junk from the working tree,
-  - and cleared diagnostics-manifest conflict residue.
-- Current local repo state after cleanup:
-  - no untracked generated artifacts remain,
-  - no unmerged entries remain,
-  - remaining intentional repo dirt is limited to staged updates of:
-    - `data/features/polymarket/feature_sets/latest_feature_set_manifest.json`,
-    - `data/features/polymarket/input_freezes/latest_feature_input_freeze_manifest.json`.
+- Ran a small server-side reproducibility inspection instead of a new implementation step.
+- Confirmed local repo reality on Debian:
+  - branch = `main`
+  - `HEAD = 8980f88`
+  - repo dirt is currently cache junk only, not intentional code work:
+    - `src/pmre/__pycache__/cli.cpython-311.pyc`
+    - untracked `__pycache__` files under `experiments/`, `features/`, and `reporting/`
+- Detected that the working-tree versions of:
+  - `data/features/polymarket/input_freezes/latest_feature_input_freeze_manifest.json`
+  - `data/features/polymarket/feature_sets/latest_feature_set_manifest.json`
+  had been pointing to missing newer artifacts from the longer bounded sample.
+- Restored those two latest-pointer files back to coherent tracked artifacts.
+- Confirmed that the current tracked latest artifacts now resolve successfully to the older coherent bounded sample:
+  - freeze id = `20260311T214230Z__20260312T133004Z`
+  - books-state row count = `60`
+  - feature-set row count = `60`
+- Confirmed that the current tracked latest checkout is missing:
+  - `data/features/polymarket/diagnostics/latest_feature_diagnostics_manifest.json`
+- Confirmed that this missing diagnostics manifest currently blocks both:
+  - default-threshold tradability rerun,
+  - calibrated-threshold tradability rerun,
+  - and therefore any current-checkout maker-markout rerun.
+- Confirmed that the preserved runtime snapshot under:
+  - `~/pmre_runtime_snapshots/20260313T102233Z/`
+  contains the longer bounded-sample runtime truth, including:
+  - local calibration config,
+  - 120-row feature-set artifacts,
+  - diagnostics manifest,
+  - tradability outputs,
+  - active-universe CSV,
+  - maker-markout outputs,
+  - and a preserved note matching the documented calibrated keep set and maker-markout summary.
+- Confirmed preserved snapshot facts for the longer bounded sample:
+  - calibrated keep IDs:
+    - `540818`
+    - `540819`
+    - `540844`
+    - `540881`
+  - maker-markout scaffold facts:
+    - `selected_rows = 44`
+    - `market_summary_rows = 4`
+    - row-step horizons = `[1, 2, 5]`
 
 ### Outdated assumptions removed
-- The active universe is no longer empty under the currently validated calibrated thresholds.
-- The maker-markout scaffold is no longer merely assumed upstream; it is now present locally, CLI-wired, and has been run successfully on the Debian server.
-- The immediate blocker is no longer “obtain any non-empty keep set before markout.” That hurdle has been cleared.
-- The current calibrated tradability result should not be described as the default-threshold outcome; the non-empty active universe depends on an explicit local tradability override.
-- The calibrated runtime truth does not need to remain in a dirty repo tree; it has now been preserved outside the checkout and should remain clearly separated from tracked default config unless intentionally promoted.
+- Do not assume the current tracked latest checkout still corresponds to the longer bounded 120-row sample.
+- Do not assume that the current checkout can rerun tradability from latest pointers without first restoring or regenerating diagnostics artifacts.
+- Do not describe the memo-basis 120-row calibrated result as currently reproducible from tracked latest as-is.
+- Do not treat the restored tracked latest state and the preserved longer-sample runtime snapshot as the same runtime basis.
+- Do not treat current repo state as fully clean; cache junk remains, even though the manifest-pointer issue has been resolved locally.
 
 ---
 
@@ -88,24 +71,26 @@ The goal is not to rush into a bot or accumulate loosely related ideas. The goal
 
 ## Current Phase
 
-**Phase 1 — minimum data backbone plus stable feature set, diagnostics, tradability gating, and first conservative maker-markout scaffold validated; calibration and interpretation remain explicit**
+**Phase 1 — minimum data backbone, stable feature set, diagnostics, tradability gating, and conservative maker-markout scaffold all exist; preserved longer-sample runtime truth exists, but current tracked latest reproducibility is partially blocked**
 
 Current reality:
 - metadata universe refresh works,
-- token IDs are being collected and stored,
-- raw order-book snapshots are being collected,
-- top-of-book state is being built from raw snapshots,
-- the feature-job input set is frozen explicitly,
-- a first stable feature set `v0_1` has been built successfully from those frozen inputs,
-- a diagnostics layer on top of the stable feature set exists and runs successfully,
-- a downstream tradability / gating layer converts diagnostics into keep/watch/exclude plus active-universe outputs,
-- a slightly longer bounded sample materially improved row count from `60` to `120`,
-- default tradability thresholds on that longer sample still produced `keep = 0`, `watch = 4`, `exclude = 6`,
-- an explicit conservative local calibration override produced a non-empty keep-only active universe of size `4`,
-- the conservative maker-markout scaffold has now been run successfully on that calibrated active universe,
-- and a cleanup pass has preserved the validated calibrated runtime artifacts outside the repo tree while reducing the checkout to a near-clean state.
+- token IDs are collected and stored,
+- raw order-book snapshots are collected,
+- top-of-book state is built from raw snapshots,
+- feature-job inputs are frozen explicitly,
+- a stable feature set `v0_1` exists,
+- a diagnostics layer exists,
+- a tradability / gating layer exists,
+- a conservative maker-markout scaffold exists,
+- a longer bounded sample was previously validated locally with 120 rows and non-empty calibrated keep set,
+- those longer-sample calibrated artifacts were preserved outside the repo tree under `~/pmre_runtime_snapshots/20260313T102233Z/`,
+- the current tracked latest checkout has been restored to a coherent older 60-row freeze / feature-set pair,
+- and the current tracked latest checkout cannot yet rerun tradability because the latest diagnostics manifest is missing.
 
-This remains an early research-stage system. The current maker-markout result is still a triage scaffold under explicit simplifying assumptions, but the project is no longer blocked before its first markout experiment.
+This remains an early research-stage system. The first maker-markout result still remains scaffold-level triage under explicit simplifying assumptions. In addition, current reproducibility must distinguish between:
+- preserved longer-sample runtime truth,
+- and current tracked-latest checkout truth.
 
 ---
 
@@ -120,7 +105,7 @@ A minimal Debian-first repo exists with:
 - raw / reference / state / features / reports directory separation.
 
 ### Repository workflow
-A minimal GitHub-centered workflow is now established:
+A minimal GitHub-centered workflow is established:
 - the GitHub repository is the source of truth for code,
 - the Debian server runs the checked-out repo,
 - ChatGPT Project files are used for persistent context,
@@ -152,7 +137,7 @@ Implemented and working:
 Current implementation notes:
 - this is a polling collector,
 - not websocket ingestion,
-- and it currently targets a bounded subset of tokens for week-1 research.
+- and it currently targets a bounded subset of tokens for early research.
 
 #### 3. State builder
 Implemented and working:
@@ -164,7 +149,7 @@ Implemented and working:
 - writes a state manifest.
 
 Important implementation detail:
-- the raw `bids` and `asks` arrays are not assumed to be pre-sorted,
+- raw `bids` and `asks` arrays are not assumed to be pre-sorted,
 - so best bid is computed as `max(bid price)`,
 - and best ask is computed as `min(ask price)`.
 
@@ -198,7 +183,6 @@ Current implementation notes:
 - the current feature layer is intentionally minimal and diagnostic,
 - not a final research truth layer,
 - and it is limited to the roadmap feature set already planned.
-- the current live feature build succeeds on real project data.
 
 Important feature semantics now in use:
 - `spread = best_ask_price - best_bid_price`
@@ -206,14 +190,8 @@ Important feature semantics now in use:
 - `top_of_book_imbalance = (best_bid_size - best_ask_size) / (best_bid_size + best_ask_size)` when the denominator is positive
 - `microprice_proxy = (best_ask_price * best_bid_size + best_bid_price * best_ask_size) / (best_bid_size + best_ask_size)` when the denominator is positive
 - `last_trade_minus_mid = last_trade_price - midpoint` when both exist
-- `staleness_flag` is currently a first-pass diagnostic flag that includes:
-  - missing bid or ask,
-  - `spread <= 0`,
-  - timestamp-age threshold,
-  - repeated hash too long,
-  - missing `last_trade_price` for too many consecutive snapshots
-- `market_quality_score` is currently an additive/subtractive first-pass diagnostic score,
-  - not a normalized final research metric.
+- `staleness_flag` is a first-pass diagnostic flag
+- `market_quality_score` is an additive/subtractive first-pass diagnostic score, not a final research metric
 
 #### 6. Diagnostics reporting layer
 Implemented and working:
@@ -230,32 +208,17 @@ Current diagnostics coverage includes:
 - stale row count and stale row fraction,
 - null / missing spread count,
 - non-positive spread count,
-- wide-spread count using an explicit threshold,
+- wide-spread count,
 - zero / empty top-size count,
 - null imbalance count,
 - null microprice count,
 - repeated-hash diagnostics when `hash` exists,
-- and market-level summary statistics.
+- market-level summary statistics.
 
-Current market-summary outputs include:
-- `market_id`
-- `row_count`
-- `stale_row_fraction`
-- `median_spread`
-- `p90_spread`
-- `median_best_bid_size`
-- `median_best_ask_size`
-- `zero_or_empty_top_size_fraction`
-- `repeated_hash_fraction`
-- `mean_market_quality_score`
-- `median_market_quality_score`
-
-Current live implementation result:
-- the latest successful diagnostics run on the longer bounded sample processed `120` rows from the current stable feature set,
-- refreshed the diagnostics JSON summary,
-- refreshed the diagnostics market-summary CSV,
-- refreshed the latest diagnostics manifest,
-- and provided the market-level inputs used by the calibrated tradability pass without error.
+Current runtime note:
+- diagnostics outputs were validated on the preserved longer bounded sample,
+- but the current tracked latest checkout is missing `data/features/polymarket/diagnostics/latest_feature_diagnostics_manifest.json`,
+- which is now the immediate prerequisite blocker for rerunning tradability from tracked latest.
 
 #### 7. Tradability / gating layer
 Implemented and working:
@@ -270,34 +233,44 @@ Implemented and working:
 
 Current implementation notes:
 - this remains a reporting / triage layer and does not mutate diagnostics or stable feature-set artifacts.
-- threshold overrides are currently read from `tradability_report.thresholds`.
+- threshold overrides are read from `tradability_report.thresholds`.
 
-Current local validation result:
-- tradability runs successfully on the current local artifacts,
-- the longer bounded sample increased feature-set row count from `60` to `120`,
-- default thresholds on that longer sample produced:
-  - total markets = `10`,
-  - `keep = 0`,
-  - `watch = 4`,
-  - `exclude = 6`,
-  - active-universe size = `0`,
-- the near-miss watch set was driven by `row_count_watch|repeated_hash_watch`,
-- an explicit local calibration override with `min_row_count_keep = 12` and `max_repeated_hash_fraction_keep = 0.5` produced:
-  - total markets = `10`,
-  - `keep = 4`,
-  - `watch = 0`,
-  - `exclude = 6`,
-  - active-universe size = `4`,
-- and the current non-empty active universe should therefore be treated as validated under calibrated thresholds, not under untouched base defaults.
+Validated runtime truth:
+- on the preserved longer bounded sample:
+  - books-state row count = `120`
+  - feature-set row count = `120`
+- default thresholds produced:
+  - total markets = `10`
+  - `keep = 0`
+  - `watch = 4`
+  - `exclude = 6`
+- an explicit local calibration override with:
+  - `min_row_count_keep = 12`
+  - `max_repeated_hash_fraction_keep = 0.5`
+  produced:
+  - total markets = `10`
+  - `keep = 4`
+  - `watch = 0`
+  - `exclude = 6`
+- calibrated keep IDs were:
+  - `540818`
+  - `540819`
+  - `540844`
+  - `540881`
+
+Current tracked-latest note:
+- the current tracked latest freeze / feature-set pair is coherent,
+- but it is the older 60-row basis, not the preserved 120-row memo basis,
+- and current tradability reruns are blocked until diagnostics latest-manifest truth is restored.
 
 #### 8. Conservative maker-markout scaffold
 Implemented and locally validated.
 
 Implemented and working:
-- `src/pmre/experiments/build_maker_markout_report.py` exists in the synced local checkout,
+- `src/pmre/experiments/build_maker_markout_report.py` exists,
 - the CLI exposes `build-maker-markout`,
 - `scripts/run_build_maker_markout.sh` runs the scaffold,
-- `tests/test_build_maker_markout.py` exists upstream and is present locally,
+- `tests/test_build_maker_markout.py` exists,
 - the scaffold consumes the latest tradability manifest + active-universe CSV + latest feature-set manifest,
 - writes a maker-markout report JSON,
 - writes per-row markout CSV output,
@@ -309,13 +282,16 @@ Current implementation notes:
 - not execution PnL,
 - and it does not model queue position, fees, fill probability, or passive execution mechanics.
 
-Current local validation result:
-- the maker-markout scaffold ran successfully on the Debian server,
-- it consumed the calibrated keep-only active universe of `4` markets,
-- it selected `44` rows after dropping `72` rows not in the active universe and `4` stale rows,
-- it produced `4` market summaries,
-- it used row-step horizons `[1, 2, 5]`,
-- and the current summary outputs show positive populated mean buy/sell markouts with zero adverse fractions under the scaffold assumptions.
+Validated runtime truth:
+- the preserved longer-sample calibrated maker-markout run produced:
+  - `selected_rows = 44`
+  - `drop_not_in_active_universe = 72`
+  - `drop_stale = 4`
+  - `market_summary_rows = 4`
+  - row-step horizons `[1, 2, 5]`
+
+Current tracked-latest note:
+- current maker-markout rerun from tracked latest is blocked downstream because tradability cannot currently rerun from tracked latest.
 
 ---
 
@@ -335,27 +311,14 @@ The current repo should be understood approximately as:
   - `run_build_feature_diagnostics.sh`
   - `run_build_tradability_report.sh`
   - `run_build_maker_markout.sh`
-  - GitHub / workflow helper scripts
 - `src/pmre/`
   - `config.py`
   - `cli.py`
   - `ingest/`
-    - `gamma_client.py`
-    - `metadata_refresh.py`
-    - `clob_client.py`
-    - `raw_books_collector.py`
   - `state/`
-    - `build_books_state.py`
   - `features/`
-    - `freeze_feature_inputs.py`
-    - `build_feature_set_v0_1.py`
-    - `build_books_features.py`
   - `reporting/`
-    - `build_feature_diagnostics.py`
-    - `build_tradability_report.py`
   - `experiments/`
-    - `maker_markout_smoke.py`
-    - `build_maker_markout_report.py`
 - `tests/`
   - metadata refresh test
   - raw books collector test
@@ -373,7 +336,7 @@ The current repo should be understood approximately as:
   - `features/`
   - `experiments/`
 
-This structure is now real and should be preserved unless there is a strong reason to change it.
+This structure is real and should be preserved unless there is a strong reason to change it.
 
 ---
 
@@ -385,76 +348,24 @@ This structure is now real and should be preserved unless there is a strong reas
 Stored under:
 - `data/raw/polymarket/metadata/markets_pages/`
 
-These are paginated raw Gamma market responses preserved as JSON files.
-
 #### Metadata manifest and checkpoint
 Stored under:
 - `data/raw/polymarket/metadata/metadata_refresh_manifest.json`
 - `data/raw/polymarket/metadata/metadata_refresh_checkpoint.json`
 
-These define:
-- crawl progress,
-- offsets,
-- run parameters,
-- and output paths.
-
 #### Canonical market table
 Stored under:
 - `data/reference/polymarket/markets.csv`
 
-Current fields include:
-- `market_id`
-- `event_id`
-- `condition_id`
-- `question_id`
-- `slug`
-- `question`
-- `category`
-- `active`
-- `closed`
-- `archived`
-- `accepting_orders`
-- `enable_order_book`
-- `minimum_order_size`
-- `minimum_tick_size`
-- `liquidity`
-- `volume`
-- `start_date`
-- `end_date`
-- `description`
-- `market_type`
-- `format_type`
-- `outcomes_json`
-- `outcome_prices_json`
-- `clob_token_ids_json`
-
 #### Canonical token table
 Stored under:
 - `data/reference/polymarket/tokens.csv`
-
-Current fields include:
-- `market_id`
-- `event_id`
-- `token_index`
-- `outcome`
-- `token_id`
-- `outcome_price`
 
 ### Raw books layer
 
 #### Raw books JSONL
 Stored under:
 - `data/raw/polymarket/books/books_run_<run_id>.jsonl`
-
-Each JSONL line is an envelope containing:
-- collector timestamp,
-- iteration index,
-- batch index,
-- requested token IDs,
-- requested token metadata,
-- returned books payload.
-
-This raw file is the main preserved source for downstream state building.
 
 #### Raw books manifest
 Stored under:
@@ -467,30 +378,6 @@ Stored under:
 Stored under:
 - `data/state/polymarket/books_state_<run_id>.csv`
 
-Current fields include:
-- `source_run_id`
-- `collector_ts`
-- `book_timestamp`
-- `iteration`
-- `batch_index`
-- `market_id`
-- `event_id`
-- `outcome`
-- `token_index`
-- `token_id`
-- `clob_market`
-- `best_bid_price`
-- `best_bid_size`
-- `best_ask_price`
-- `best_ask_size`
-- `mid_price`
-- `spread`
-- `bid_levels_count`
-- `ask_levels_count`
-- `last_trade_price`
-- `hash`
-- `source_jsonl`
-
 #### State manifest
 Stored under:
 - `data/state/polymarket/books_state_<run_id>_manifest.json`
@@ -502,18 +389,15 @@ Stored under:
 Stored under:
 - `data/features/polymarket/input_freezes/freeze_<freeze_id>/`
 
-Each frozen bundle currently contains:
-- latest books state manifest,
-- corresponding `books_state_<run_id>.csv`,
-- `markets.csv`,
-- `tokens.csv`,
-- feature-input freeze manifest.
-
 #### Latest feature-input freeze manifest
 Stored under:
 - `data/features/polymarket/input_freezes/latest_feature_input_freeze_manifest.json`
 
-This defines the exact approved input set for the current feature job.
+Current tracked latest:
+- resolves to coherent older freeze `20260311T214230Z__20260312T133004Z`
+
+Preserved longer-sample snapshot:
+- contains a separate later freeze basis for the memo-era 120-row run under `~/pmre_runtime_snapshots/20260313T102233Z/`
 
 ### Feature layer
 
@@ -521,40 +405,17 @@ This defines the exact approved input set for the current feature job.
 Stored under:
 - `data/features/polymarket/feature_sets/feature_set_v0_1_<freeze_id>.csv`
 
-Current feature columns include:
-- `spread`
-- `midpoint`
-- `best_bid_size`
-- `best_ask_size`
-- `top_of_book_imbalance`
-- `microprice_proxy`
-- `last_trade_minus_mid`
-- `bid_levels_count`
-- `ask_levels_count`
-- `staleness_flag`
-- `market_quality_score`
-
-along with row identifiers and provenance fields such as:
-- `feature_set_version`
-- `freeze_id`
-- `source_run_id`
-- `collector_ts`
-- `market_id`
-- `token_id`
-- `hash`
-
 #### Feature-set manifest and schema
 Stored under:
 - `data/features/polymarket/feature_sets/feature_set_v0_1_<freeze_id>_manifest.json`
 - `data/features/polymarket/feature_sets/latest_feature_set_manifest.json`
 - `data/features/polymarket/feature_sets/feature_set_v0_1_schema.json`
 
-These define:
-- the frozen inputs consumed,
-- the feature set version,
-- the output path,
-- the row count,
-- and the diagnostic feature definitions.
+Current tracked latest:
+- resolves to coherent older feature set with `row_count = 60`
+
+Preserved longer-sample snapshot:
+- contains a later feature set with `row_count = 120`
 
 ### Diagnostics layer
 
@@ -562,29 +423,20 @@ These define:
 Stored under:
 - `data/features/polymarket/diagnostics/feature_diagnostics_<feature_set_id>.json`
 
-This contains:
-- run metadata,
-- input feature manifest path,
-- input feature CSV path,
-- aggregate diagnostics summary,
-- output paths.
-
 #### Market-summary CSV
 Stored under:
 - `data/features/polymarket/diagnostics/feature_diagnostics_<feature_set_id>_market_summary.csv`
-
-This contains market-level rollups for diagnostics and triage.
 
 #### Latest diagnostics manifest
 Stored under:
 - `data/features/polymarket/diagnostics/latest_feature_diagnostics_manifest.json`
 
-This defines:
-- the latest diagnostics run,
-- the current feature-set ID,
-- the input feature artifact,
-- the diagnostics JSON path,
-- the market-summary CSV path.
+Current tracked-latest note:
+- this file is currently missing in the live checkout
+
+Preserved longer-sample snapshot:
+- contains a preserved latest diagnostics manifest under:
+  - `~/pmre_runtime_snapshots/20260313T102233Z/data/features/polymarket/diagnostics/latest_feature_diagnostics_manifest.json`
 
 ### Tradability / universe layer
 
@@ -592,47 +444,35 @@ This defines:
 Stored under:
 - `data/features/polymarket/universe/tradability_report_<feature_set_id>.json`
 
-Contains:
-- centralized threshold config used for this run,
-- scoring formula notes,
-- keep/watch/exclude counts,
-- top keep markets and frequent exclusion reasons,
-- output paths for this tradability run.
-
 #### Tradability market-summary CSV
 Stored under:
 - `data/features/polymarket/universe/tradability_report_<feature_set_id>_market_summary.csv`
-
-Contains market-level diagnostics + gating additions including:
-- `gating_class`,
-- `tradability_score`,
-- `gating_reason`.
 
 #### Active universe CSV
 Stored under:
 - `data/features/polymarket/universe/active_universe_<feature_set_id>.csv`
 
-Contains keep-only markets for the next maker-markout step.
-
-Current local validation result:
-- the file is being written correctly,
-- the default-threshold longer-sample run still produced a header-only CSV,
-- but the latest calibrated local validation run produced `4` keep markets:
-  - `540818`,
-  - `540819`,
-  - `540844`,
-  - `540881`.
+Validated preserved longer-sample calibrated result:
+- active universe size = `4`
+- keep IDs:
+  - `540818`
+  - `540819`
+  - `540844`
+  - `540881`
 
 #### Latest tradability manifest
 Stored under:
 - `data/features/polymarket/universe/latest_tradability_manifest.json`
 
-Defines the latest tradability run and pointers to tradability outputs.
+Current tracked-latest note:
+- current rerun did not produce a fresh latest tradability manifest because tradability is blocked by missing diagnostics latest-manifest truth
 
-Current local note:
-- the latest calibrated tradability manifest and outputs were validated locally,
-- used as input for the first maker-markout scaffold pass,
-- and then backed up outside the repo tree during hygiene cleanup because the calibrated thresholds remain experimental.
+Preserved longer-sample snapshot:
+- contains:
+  - `data/features/polymarket/universe/latest_tradability_manifest.json`
+  - calibrated tradability JSON report
+  - calibrated tradability market-summary CSV
+  - calibrated active-universe CSV
 
 ### Maker-markout experiment layer
 
@@ -640,51 +480,25 @@ Current local note:
 Stored under:
 - `data/experiments/polymarket/maker_markout/maker_markout_<feature_set_id>.json`
 
-Contains:
-- run metadata,
-- input manifest paths,
-- horizon configuration,
-- selection counts,
-- explicit scaffold assumptions,
-- and output paths.
-
 #### Maker-markout rows CSV
 Stored under:
 - `data/experiments/polymarket/maker_markout/maker_markout_<feature_set_id>_rows.csv`
-
-Contains row-level snapshot-based markout fields including:
-- buy/sell quote prices,
-- future mids at configured horizons,
-- buy/sell markouts,
-- market quality score,
-- spread,
-- midpoint,
-- top-of-book sizes,
-- market and token identifiers.
 
 #### Maker-markout market-summary CSV
 Stored under:
 - `data/experiments/polymarket/maker_markout/maker_markout_<feature_set_id>_market_summary.csv`
 
-Contains per-market rollups including:
-- `row_count`,
-- `mean_spread`,
-- `mean_market_quality_score`,
-- mean buy/sell markouts by horizon,
-- adverse buy/sell markout fractions.
-
 #### Latest maker-markout manifest
 Stored under:
 - `data/experiments/polymarket/maker_markout/latest_maker_markout_manifest.json`
 
-Defines the latest maker-markout scaffold run and pointers to its outputs.
+Validated preserved longer-sample result:
+- selected rows = `44`
+- market summary rows = `4`
+- horizons = `[1, 2, 5]`
 
-Current local validation result:
-- the latest maker-markout run selected `44` rows,
-- covered `4` markets,
-- used row-step horizons `[1, 2, 5]`,
-- produced populated market summaries for all `4` calibrated keep markets,
-- and those runtime outputs were backed up outside the repo tree during hygiene cleanup rather than left as accidental tracked state.
+Current tracked-latest note:
+- no fresh rerun was produced from the current checkout because maker-markout depends on tradability output, which is currently blocked by missing diagnostics latest-manifest truth
 
 ---
 
@@ -692,32 +506,12 @@ Current local validation result:
 
 The next concrete tasks should now be:
 
-1. Update tracked project context to reflect the current runtime truth and cleanup result:
-   - longer bounded sample validated,
-   - calibrated non-empty active universe validated,
-   - maker-markout scaffold present locally and run successfully,
-   - repo/runtime hygiene pass completed,
-   - and the remaining staged manifest-pointer changes called out explicitly.
-
-2. Resolve the remaining staged latest-manifest updates deliberately:
-   - `data/features/polymarket/input_freezes/latest_feature_input_freeze_manifest.json`,
-   - `data/features/polymarket/feature_sets/latest_feature_set_manifest.json`,
-   - either restore them to tracked default truth or commit them intentionally together with the matching documentation.
-
-3. Interpret the first maker-markout scaffold outputs conservatively:
-   - per-market mean buy/sell markouts,
-   - adverse fractions,
-   - missing horizon coverage for some markets,
-   - and the extent to which the current positive symmetric markouts may be scaffold artifacts versus useful triage signal.
-
-4. Keep the calibrated tradability thresholds as an experimental local override unless there is a deliberate decision to promote them into a tracked config path.
-
-5. Keep the implementation sequence conservative:
-   - no duplicate ingestion work,
-   - no duplicate feature-builder scaffolding,
-   - no extra diagnostics layer duplication,
-   - no websocket / event enrichment in this immediate step,
-   - and no further server/runtime work unless the remaining manifest pointers prove inconsistent with the documented runtime truth.
+1. Restore or regenerate diagnostics latest-manifest truth for the current tracked latest checkout.
+2. Keep current-tracked reproducibility separate from preserved longer-sample reproducibility.
+3. Re-run default and calibrated tradability only after diagnostics latest-manifest truth is present.
+4. Re-run maker-markout only if calibrated tradability reproduces successfully.
+5. Keep calibrated thresholds as experimental local override unless deliberately promoted later.
+6. Do not overinterpret preserved positive maker-markout scaffold output as execution evidence.
 
 ---
 
@@ -726,138 +520,91 @@ The next concrete tasks should now be:
 At the current stage, the following should be treated as validated.
 
 ### Project-level validation
-- The original longshot / near-certainty framing is too weak to serve as the core research engine.
-- The project should prioritize **maker-first microstructure** before the other two directions.
 - A modular, execution-aware architecture is the correct design target.
 - The first sprint should focus on data trust, execution realism, and cheap falsification rather than aggressive implementation.
+- Maker-first microstructure remains the highest-priority research direction among the original candidates.
 
 ### Implementation validation
 - The Debian project skeleton is usable.
-- The metadata refresh process runs successfully with resumable progress.
+- Metadata refresh runs successfully with resumable progress.
 - Canonical market and token tables can be built from live Polymarket metadata.
 - Token IDs from the metadata table can be used to collect real CLOB book data.
 - Raw book snapshots can be preserved in append-only JSONL.
-- A first normalized top-of-book state table can be built from raw book snapshots.
-- The state builder correctly computes best bid and best ask from unsorted book levels.
+- A normalized top-of-book state table can be built from raw book snapshots.
 - The feature job input boundary can be frozen reproducibly.
-- A first stable feature-set version `v0_1` can be built from the frozen input bundle.
-- The current live feature build succeeds on the real project data.
+- A stable feature-set version `v0_1` can be built from the frozen input bundle.
 - The diagnostics layer exists in the repo and is wired into the CLI.
-- The diagnostics shell runner exists and runs successfully.
-- The diagnostics job successfully consumes the latest stable feature-set manifest and writes all expected outputs.
-- The tradability / gating layer exists locally and runs successfully on the Debian server.
-- The tradability shell runner exists.
-- The tradability job consumes diagnostics + feature-set manifests and writes tradability summary + active-universe outputs.
-- The longer bounded polling sample and full downstream rebuild succeed on the Debian server.
-- The current default-threshold tradability output is structurally correct even when the active universe is empty.
-- The local synced checkout now contains the upstream maker-markout scaffold.
-- The maker-markout shell runner exists.
-- The maker-markout CLI wiring exists.
-- The maker-markout scaffold successfully consumes the current latest tradability + feature-set artifacts and writes all expected maker-markout outputs.
-- The repo/runtime hygiene pass successfully preserved the calibrated runtime artifacts outside the repo tree while removing generated artifacts, cache junk, and local-only configs from the checkout.
+- The tradability / gating layer exists and is wired into the CLI.
+- The maker-markout scaffold exists and is wired into the CLI.
+- The longer bounded sample, calibrated tradability result, and first maker-markout scaffold run were preserved successfully outside the repo tree.
+- Latest feature-freeze and feature-set pointers in the live checkout were restored to coherent tracked artifacts after an inconsistent working-tree state was detected.
 
 ### Data-contract validation
 - `market_id` is usable in the current backbone.
-- `condition_id` is usable in the current backbone.
-- `token_id` is usable in the current backbone.
-- `outcome` to `token_id` mapping is usable in the current backbone.
-- The current state artifact is sufficient to support a first stable diagnostic feature layer.
-- The current stable feature artifact is sufficient to support a first diagnostics reporting layer.
-- Diagnostics outputs are sufficient to drive a first explicit keep/watch/exclude market gating layer and keep-only active-universe artifact.
-- The longer bounded sample is sufficient to move the gating result from hard row-count exclusion into a near-miss calibration regime.
-- The current calibrated threshold override is sufficient to produce a non-empty keep-only active universe.
-- The current active-universe artifact is sufficient input for the conservative maker-markout scaffold.
+- Feature-set manifests, tradability manifests, and maker-markout manifests are sufficient to reconstruct preserved runtime truth when those artifacts are present.
+- Current tracked latest freeze / feature-set pointers now resolve to existing artifacts.
 
 ### Process validation
-- Inspecting local repo reality before changing code is the correct operating rule.
-- GitHub remains the source of truth for code.
-- Local server artifacts are the runtime truth for validation.
-- Project context files are useful for continuity, but local server flow should not depend on them existing in the checkout.
-- Repo hygiene must be handled before rebasing a dirty local branch.
-- Experimental runtime artifacts should be backed up outside the repo tree before cleanup rather than left as ambiguous tracked state.
-- Experimental local configs should remain outside tracked `configs/` unless intentionally promoted.
+- Small server-side verification can reveal the difference between:
+  - preserved runtime truth,
+  - tracked latest checkout truth,
+  - and accidental working-tree drift.
+- Preserving experimental calibrated artifacts outside the repo tree is operationally useful.
+- Latest-pointer files should be checked by actual path existence, not only by apparent recency.
 
 ---
 
 ## What Is Not Yet Validated
 
-The following are still not validated.
-
 ### Event linkage
-- whether event-level enrichment is necessary for the next useful research delta,
-- whether event grouping changes the first-pass microstructure conclusions materially.
+- Event-level enrichment is not yet part of the trusted backbone.
 
 ### Market-state truth beyond top of book
-- whether top-of-book-only state is sufficient for the first maker / toxicity studies,
-- whether deeper ladder reconstruction is needed before markout work becomes meaningful.
+- Full-depth state, queue state, and hidden liquidity are not modeled.
 
 ### Execution realism
-- queue position,
-- passive fill probability,
-- cancellation timing,
-- fees / rebates,
-- realized maker PnL under realistic assumptions.
+- Queue position is not modeled.
+- Fees are not modeled.
+- Fill probability is not modeled.
+- Passive execution mechanics are not modeled.
 
 ### Signal validity
-- whether any current microstructure feature family produces genuine edge,
-- whether any tradability ranking survives beyond triage usefulness.
+- The first maker-markout scaffold result is not execution PnL.
+- The first maker-markout scaffold result is not yet robust across broader windows or regimes.
+- Preserved longer-sample positive symmetric markouts may still be heavily shaped by scaffold assumptions.
 
 ### Operational robustness
-- robustness of the bounded polling collector across longer runs,
-- how stable diagnostics / gating outputs remain over larger samples and more markets.
+- Current tracked latest checkout is not yet fully rerunnable end-to-end because diagnostics latest-manifest truth is missing.
+- Exact rerun of the memo-basis 120-row result has not yet been reproduced from the current tracked latest checkout.
 
 ### Diagnostic + gating sufficiency of the first reporting layer
-- whether the current calibrated thresholds generalize beyond this single bounded sample,
-- whether spread / quality / row-count / repeated-hash thresholds are calibrated well enough for conservative universe narrowing,
-- whether current gating reasons remain compact and interpretable over additional runs,
-- whether the simple tradability score is adequate for first-pass ranking,
-- whether the calibrated keep set persists under a slightly larger sample or under tracked config rather than a local override,
-- and whether further threshold work should remain limited to calibration rather than architecture changes.
+- Current gating may still be brittle across other bounded windows.
+- Default-threshold versus calibrated-threshold behavior still needs reproducibility confirmation on a runnable checkout.
 
 ### Maker-markout readiness
-- whether the current positive symmetric snapshot-based markouts are informative beyond scaffold sanity checking,
-- whether missing `h5` coverage for some markets materially limits interpretation,
-- whether the current zero adverse fractions are robust or mostly a consequence of the scaffold assumptions,
-- and how much of the present result survives once more realistic execution assumptions are introduced.
+- Current maker-markout remains a conservative descriptive scaffold.
+- It is not yet sufficient evidence for deployment, PnL claims, or threshold promotion.
 
 ---
 
 ## What Remains Speculative
 
-The following should still be treated as speculative until tested.
-
 ### Direction 1 — maker-first microstructure
-- that passive quoting is genuinely superior to taker-style entries in selected regimes,
-- that fill quality can be predicted well enough to filter toxic fills,
-- that refill and aggression features can produce net positive maker EV under realistic assumptions.
+Still the leading direction, but real executable edge remains unproven.
 
 ### Direction 2 — crypto fair value
-- that a crude fair-probability model is informative enough to produce useful residuals,
-- that those residuals are not overwhelmed by model error,
-- that any residual signal survives execution rather than living only in thin books.
+Still plausible later, but not the immediate focus.
 
 ### Direction 3 — displayed-price / stale-anchor
-- that stale displayed prices materially influence later behavior,
-- that any observed effect is platform-specific rather than generic sparse-book reversion,
-- that the effect is economically meaningful after execution costs.
+Still plausible later, but not the immediate focus.
 
 ---
 
 ## What Has Been Rejected or Explicitly Deprioritized
 
-The following are no longer acceptable as the core research framework:
-- “cheap vs expensive by history” as a primary signal family,
-- percentile gimmicks without execution context,
-- simplistic threshold-only screens,
-- generic technical indicators on Polymarket prices,
-- midpoint-only backtests,
-- monolithic scripts without reusable state reconstruction,
-- and any conclusion that depends on historical prints being treated as executable fills.
-
-The following are also currently deprioritized as immediate implementation targets:
-- event-table enrichment before market/token/state work is stable,
-- websocket ingestion before the first polling-based research loop is exploited,
-- overbuilt reconciliation before the first feature and markout studies exist,
-- simulator assumptions inside the first stable feature layer,
-- duplicate ingestion / feature scaffolding while the current stable pipeline already exists,
-- and making the server workflow depend on locally stored Project context files.
+- Duplicating ingestion work already present in the repo.
+- Duplicating feature-builder scaffolding already present in the repo.
+- Duplicating diagnostics work already present in the repo.
+- Treating maker-markout scaffold output as execution PnL.
+- Promoting calibrated thresholds into tracked baseline config during this phase.
+- Branching into websocket ingestion, event enrichment, stale-anchor work, crypto fair-value work, or simulator expansion during this specific reproducibility pass.
